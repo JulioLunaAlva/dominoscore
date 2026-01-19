@@ -118,18 +118,35 @@
         </div>
 
         <div class="content">
-            <div class="section">
-                <h3>Selecciona Jugadores (2-10)</h3>
-                <div id="player-selection" class="player-selection"></div>
-            </div>
+            <div class="game-setup-container">
+                <h3>Configuración de Juego</h3>
 
-            <div id="tile-recommendation" class="tile-recommendation hidden">
-                <div class="recommendation-card">
-                    <h3>📋 Recomendación de Fichas</h3>
-                    <p class="recommendation-text"></p>
+                <div class="mode-selection">
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="12" checked>
+                        <span class="mode-card">
+                            <span class="mode-title">Dominó 12</span>
+                            <span class="mode-desc">13 Rondas (12-0)</span>
+                        </span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="9">
+                        <span class="mode-card">
+                            <span class="mode-title">Dominó 9</span>
+                            <span class="mode-desc">10 Rondas (9-0)</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div id="tile-recommendation" class="tile-recommendation hidden">
+                    <span class="recommendation-icon">💡</span>
+                    <span class="recommendation-text"></span>
+                </div>
+
+                <div class="player-selection-grid" id="player-selection-list">
+                    <!-- Players injected here -->
                 </div>
             </div>
-
             <button id="start-game-btn" class="btn-primary" onclick="app.startGame()" disabled>
                 Iniciar Juego
             </button>

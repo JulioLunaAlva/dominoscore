@@ -496,7 +496,54 @@ body::before {
     flex: 1;
 }
 
-/* Player Selection */
+/* Game Mode Selection */
+.mode-selection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.mode-option {
+    cursor: pointer;
+    position: relative;
+}
+
+.mode-option input {
+    position: absolute;
+    opacity: 0;
+}
+
+.mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    /* Slight contrast */
+    border: 2px solid var(--border-color);
+    border-radius: 1rem;
+    transition: all 0.2s ease;
+}
+
+.mode-option input:checked+.mode-card {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+}
+
+.mode-title {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.mode-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Player Selection Grid */
 .player-selection {
     display: grid;
     gap: 1rem;
@@ -821,67 +868,68 @@ body::before {
     }
 
     .menu-text {
-        font-size: 1.1rem;    }
+        font-size: 1.1rem;
+    }
+}
+
+/* Utilities */
+.hidden {
+    display: none !important;
+}
+
+/* Toast Messages */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--background-card);
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 500;
+    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast-success {
+    border-color: var(--success-color);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
+}
+
+.toast-warning {
+    border-color: var(--warning-color);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%);
+}
+
+/* Pulse Animation for Leader */
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
     }
 
-    /* Utilities */
-    .hidden {
-        display: none !important;
+    70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
     }
 
-    /* Toast Messages */
-    .toast {
-        position: fixed;
-        bottom: 2rem;
-        left: 50%;
-        transform: translateX(-50%) translateY(100px);
-        background: var(--background-card);
-        padding: 1rem 1.5rem;
-        border-radius: 50px;
-        box-shadow: var(--shadow-xl);
-        border: 1px solid var(--border-color);
-        color: var(--text-primary);
-        font-weight: 500;
-        z-index: 100;
-        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        backdrop-filter: blur(10px);
-        opacity: 0;
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
     }
+}
 
-    .toast.show {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-    }
-
-    .toast-success {
-        border-color: var(--success-color);
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
-    }
-
-    .toast-warning {
-        border-color: var(--warning-color);
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%);
-    }
-
-    /* Pulse Animation for Leader */
-    @keyframes pulse-glow {
-        0% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-        }
-
-        70% {
-            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-        }
-
-        100% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-        }
-    }
-
-    .scoreboard-item.leader .player-avatar {
-        animation: pulse-glow 2s infinite;
-        border: 2px solid var(--success-color);
-    }
+.scoreboard-item.leader .player-avatar {
+    animation: pulse-glow 2s infinite;
+    border: 2px solid var(--success-color);
+}
