@@ -499,8 +499,8 @@ class DominoScoreApp {
         <div class="scoreboard-rank">${index + 1}</div>
                 ${
     standing.player.photo
-        ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
-        : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
+    ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
+    : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
 }
                 <div class="scoreboard-info">
                     <div class="player-name">${standing.player.name}</div>
