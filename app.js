@@ -158,13 +158,20 @@ class DominoScoreApp {
     }
 
     savePlayer() {
-        const name = document.getElementById('player-name').value.trim();
+        const nameInput = document.getElementById('player-name');
+        const name = nameInput.value.trim();
+
         if (!name) {
-            alert('Por favor ingresa un nombre');
+            this.showToast('Por favor ingresa un nombre', 'warning');
             return;
         }
 
-        const photoInput = document.getElementById('player-photo');
+        // Check duplicates
+        if (!this.editingPlayerId && this.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+            this.showToast('¡Ya existe un jugador con ese nombre!', 'warning');
+            return;
+        }
+
         const photoPreview = document.getElementById('photo-preview').querySelector('img');
 
         const player = {
@@ -179,6 +186,7 @@ class DominoScoreApp {
         if (this.editingPlayerId) {
             const index = this.players.findIndex(p => p.id === this.editingPlayerId);
             if (index !== -1) {
+                // Preserve stats
                 player.gamesPlayed = this.players[index].gamesPlayed;
                 player.gamesWon = this.players[index].gamesWon;
                 player.createdAt = this.players[index].createdAt;
@@ -188,9 +196,34 @@ class DominoScoreApp {
             this.players.push(player);
         }
 
-        this.saveData();
-        this.renderPlayersList();
-        this.cancelAddPlayer();
+        if (this.saveData()) {
+            this.showToast(this.editingPlayerId ? 'Jugador actualizado' : 'Jugador creado correctamente', 'success');
+            this.renderPlayersList();
+            this.cancelAddPlayer(); // This clears inputs
+        }
+    }
+
+    saveData() {
+        try {
+            localStorage.setItem('dominoscore_players', JSON.stringify(this.players));
+            localStorage.setItem('dominoscore_history', JSON.stringify(this.gameHistory));
+            if (this.currentGame) {
+                localStorage.setItem('dominoscore_current_game', JSON.stringify(this.currentGame));
+                localStorage.setItem('dominoscore_current_round', this.currentRound.toString());
+            } else {
+                localStorage.removeItem('dominoscore_current_game');
+                localStorage.removeItem('dominoscore_current_round');
+            }
+            return true;
+        } catch (e) {
+            console.error('Save failed', e);
+            if (e.name === 'QuotaExceededError') {
+                this.showToast('❌ Memoria llena. Intenta usar fotos más pequeñas o borrar historial.', 'warning');
+            } else {
+                this.showToast('Error al guardar datos', 'warning');
+            }
+            return false;
+        }
     }
 
     deletePlayer(playerId) {
@@ -324,8 +357,11 @@ class DominoScoreApp {
         };
 
         this.currentRound = 0;
-        this.saveData();
-        this.showScreen('game-screen');
+
+        if (this.saveData()) {
+            this.showScreen('game-screen');
+            this.showToast('¡Juego Iniciado! Mula del 12 🎲', 'success');
+        }
     }
 
     // Game Screen
