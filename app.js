@@ -728,13 +728,16 @@ class DominoScoreApp {
                 minute: '2-digit'
             });
 
+            const standings = game.finalScores || game.finalStandings || [];
+            const winnerScore = standings.length > 0 ? standings[0].totalScore : 0;
+
             return `
                 <div class="history-card" onclick="app.showGameDetail('${game.id}')">
                     <div class="history-date">${dateStr}</div>
                     <div class="history-players">
                         ${game.players.map(p => `<span class="history-player-tag">${p.name}</span>`).join('')}
                     </div>
-                    <div class="history-winner">🏆 Ganador: ${game.winner.name} (${game.finalStandings[0].totalScore} puntos)</div>
+                    <div class="history-winner">🏆 Ganador: ${game.winner.name} (${winnerScore} puntos)</div>
                 </div>
             `;
         }).join('');
@@ -757,6 +760,9 @@ class DominoScoreApp {
             minute: '2-digit'
         });
 
+        // Fix: Use finalScores if available, fallback to finalStandings
+        const standings = game.finalScores || game.finalStandings || [];
+
         let html = `
             <div style="margin-bottom: 2rem;">
                 <h3 style="margin-bottom: 0.5rem;">Juego del ${dateStr}</h3>
@@ -766,7 +772,7 @@ class DominoScoreApp {
             <div class="scoreboard-section">
                 <h3>Clasificación Final</h3>
                 <div class="scoreboard">
-                    ${game.finalStandings.map((standing, index) => `
+                    ${standings.map((standing, index) => `
                         <div class="scoreboard-item ${index === 0 ? 'leader' : ''}">
                             <div class="scoreboard-rank">${index + 1}</div>
                             ${standing.player.photo
@@ -801,7 +807,7 @@ class DominoScoreApp {
                             `).join('')}
                             <tr style="font-weight: 700; background: var(--background-card);">
                                 <td style="padding: 0.75rem;">Total</td>
-                                ${game.finalStandings.map(s => `<td style="padding: 0.75rem; text-align: center;">${s.totalScore}</td>`).join('')}
+                                ${standings.map(s => `<td style="padding: 0.75rem; text-align: center;">${s.totalScore}</td>`).join('')}
                             </tr>
                         </tbody>
                     </table>
