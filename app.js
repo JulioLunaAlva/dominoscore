@@ -1,4 +1,3 @@
-```javascript
 // DominoScore App - Main Application Logic
 
 class DominoScoreApp {
@@ -10,7 +9,7 @@ class DominoScoreApp {
         this.editingPlayerId = null; // Keep this as it's not explicitly removed
 
         // Round definitions will be generated based on game mode
-        this.roundNames = []; 
+        this.roundNames = [];
 
         this.init();
     }
@@ -146,7 +145,7 @@ class DominoScoreApp {
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
+
                     const MAX_WIDTH = 150;
                     const MAX_HEIGHT = 150;
                     let width = img.width;
@@ -167,11 +166,11 @@ class DominoScoreApp {
                     canvas.width = width;
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-                    
+
                     const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    
+
                     const preview = document.getElementById('photo-preview');
-                    preview.innerHTML = `< img src = "${compressedDataUrl}" alt = "Preview" > `;
+                    preview.innerHTML = `<img src="${compressedDataUrl}" alt="Preview">`;
                     preview.classList.remove('empty');
                 };
                 img.src = e.target.result;
@@ -262,22 +261,21 @@ class DominoScoreApp {
 
         if (this.players.length === 0) {
             container.innerHTML = `
-    < div class="empty-state" >
+                <div class="empty-state">
                     <div class="empty-state-icon">👥</div>
                     <p>No hay jugadores registrados</p>
                     <p style="margin-top: 0.5rem; font-size: 0.9rem;">Presiona el botón + para agregar jugadores</p>
-                </div >
-    `;
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = this.players.map(player => `
-    < div class="player-card" >
-        ${
-            player.photo
-            ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
-            : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
-}
+            <div class="player-card">
+                ${player.photo
+                ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
+                : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
+            }
                 <div class="player-info">
                     <div class="player-name">${player.name}</div>
                     <div class="player-stats">${player.gamesPlayed} juegos • ${player.gamesWon} victorias</div>
@@ -285,8 +283,8 @@ class DominoScoreApp {
                 <div class="player-actions">
                     <button class="btn-small btn-delete" onclick="app.deletePlayer('${player.id}')">Eliminar</button>
                 </div>
-            </div >
-    `).join('');
+            </div>
+        `).join('');
     }
 
     // Game Setup
@@ -295,35 +293,34 @@ class DominoScoreApp {
 
         if (this.players.length === 0) {
             container.innerHTML = `
-    < div class="empty-state" >
+                <div class="empty-state">
                     <div class="empty-state-icon">👥</div>
                     <p>No hay jugadores registrados</p>
                     <button class="btn-primary" onclick="app.showScreen('players-screen')" style="margin-top: 1rem;">
                         Agregar Jugadores
                     </button>
-                </div >
-    `;
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = this.players.map(player => `
-    < div class="player-select-card" data - player - id="${player.id}" onclick = "app.togglePlayerSelection('${player.id}')" >
-        ${
-    player.photo
-        ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
-        : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
-}
-<div class="player-info">
-    <div class="player-name">${player.name}</div>
-</div>
-            </div >
-    `).join('');
+            <div class="player-select-card" data-player-id="${player.id}" onclick="app.togglePlayerSelection('${player.id}')">
+                ${player.photo
+                ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
+                : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
+            }
+                <div class="player-info">
+                    <div class="player-name">${player.name}</div>
+                </div>
+            </div>
+        `).join('');
 
         this.updateGameSetup();
     }
 
     togglePlayerSelection(playerId) {
-        const card = document.querySelector(`[data - player - id="${playerId}"]`);
+        const card = document.querySelector(`[data-player-id="${playerId}"]`);
         card.classList.toggle('selected');
         this.updateGameSetup();
     }
@@ -348,10 +345,17 @@ class DominoScoreApp {
             }
 
             recommendation.querySelector('.recommendation-text').textContent =
-                `Con ${ playerCount } jugador${ playerCount > 1 ? 'es' : '' }, cada uno debe tomar ${ tilesPerPlayer } fichas.`;
+                `Con ${playerCount} jugador${playerCount > 1 ? 'es' : ''}, cada uno debe tomar ${tilesPerPlayer} fichas.`;
         } else {
             startBtn.disabled = true;
             recommendation.classList.add('hidden');
+        }
+    }
+
+    generateRounds(maxDouble) {
+        this.roundNames = [];
+        for (let i = maxDouble; i >= 0; i--) {
+            this.roundNames.push({ name: `Mula del ${i}`, value: i });
         }
     }
 
@@ -389,10 +393,10 @@ class DominoScoreApp {
         };
 
         this.currentRound = 0;
-    
+
         if (this.saveData()) {
             this.showScreen('game-screen');
-            this.showToast(`¡Juego Iniciado! Mula del ${ mode } 🎲`, 'success');
+            this.showToast(`¡Juego Iniciado! Mula del ${mode} 🎲`, 'success');
         }
     }
 
@@ -404,8 +408,8 @@ class DominoScoreApp {
         }
 
         // Restore rounds based on saved mode if needed
-        if (this.currentGame.mode && (!this.roundNames.length || this.roundNames[0].value !== `${ this.currentGame.mode } -${ this.currentGame.mode } `)) {
-             this.generateRounds(this.currentGame.mode || 12);
+        if (this.currentGame.mode && (!this.roundNames.length || this.roundNames[0].value !== this.currentGame.mode)) {
+            this.generateRounds(this.currentGame.mode || 12);
         }
 
         this.updateRoundDisplay();
@@ -418,13 +422,13 @@ class DominoScoreApp {
         const prevBtn = document.getElementById('prev-round-btn');
         const nextBtn = document.getElementById('next-round-btn');
         const finishBtn = document.getElementById('finish-game-btn');
-        
+
         if (!prevBtn || !nextBtn || !finishBtn) return;
 
         const isLastRound = this.currentRound === this.roundNames.length - 1;
 
         prevBtn.disabled = this.currentRound === 0;
-        
+
         if (isLastRound) {
             nextBtn.classList.add('hidden');
             finishBtn.classList.remove('hidden');
@@ -438,7 +442,7 @@ class DominoScoreApp {
         const roundInfo = this.roundNames[this.currentRound];
         document.getElementById('current-round-name').textContent = roundInfo.name;
         document.getElementById('current-round-number').textContent =
-            `Ronda ${ this.currentRound + 1 } de 12`;
+            `Ronda ${this.currentRound + 1} de ${this.roundNames.length}`;
     }
 
     renderScoreEntry() {
@@ -448,14 +452,13 @@ class DominoScoreApp {
         container.innerHTML = this.currentGame.players.map(player => {
             const totalScore = this.calculateTotalScore(player.id);
             const currentScore = round.scores[player.id];
-            
+
             return `
-    < div class="score-input-card" >
-        ${
-    player.photo
-        ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
-        : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
-}
+                <div class="score-input-card">
+                    ${player.photo
+                    ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
+                    : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
+                }
                     <div class="score-input-info">
                         <div class="player-name">${player.name}</div>
                         <div class="total-score">Total: ${totalScore}</div>
@@ -469,7 +472,7 @@ class DominoScoreApp {
                            min="0"
                            placeholder="0">
                 </div>
-`;
+            `;
         }).join('');
     }
 
@@ -495,19 +498,18 @@ class DominoScoreApp {
         })).sort((a, b) => a.totalScore - b.totalScore);
 
         container.innerHTML = standings.map((standing, index) => `
-    < div class="scoreboard-item ${index === 0 ? 'leader' : ''}" >
-        <div class="scoreboard-rank">${index + 1}</div>
-                ${
-    standing.player.photo
-        ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
-        : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
-}
+            <div class="scoreboard-item ${index === 0 ? 'leader' : ''}">
+                <div class="scoreboard-rank">${index + 1}</div>
+                ${standing.player.photo
+                ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
+                : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
+            }
                 <div class="scoreboard-info">
                     <div class="player-name">${standing.player.name}</div>
                 </div>
                 <div class="scoreboard-score">${standing.totalScore}</div>
-            </div >
-    `).join('');
+            </div>
+        `).join('');
     }
 
     previousRound() {
@@ -550,7 +552,7 @@ class DominoScoreApp {
         // Message 1: Round Winner (if meaningful)
         if (roundWinner.roundScore === 0) {
             setTimeout(() => {
-                this.showToast(`¡${ roundWinner.player.name } dominó la ronda! 💥`, 'success');
+                this.showToast(`¡${roundWinner.player.name} dominó la ronda! 💥`, 'success');
                 this.fireConfetti(); // Mini celebration for round win
             }, delay);
             delay += 2500;
@@ -560,11 +562,11 @@ class DominoScoreApp {
         // Show if difference is small (e.g., less than 15 points) and it's not the first round
         if (this.currentRound > 0 && diff < 15 && diff > 0) {
             setTimeout(() => {
-                this.showToast(`¡Cuidado ${ leader.player.name } !${ chaser.player.name } está a solo ${ diff } puntos de alcanzarte 👀`, 'warning');
+                this.showToast(`¡Cuidado ${leader.player.name}! ${chaser.player.name} está a solo ${diff} puntos de alcanzarte 👀`, 'warning');
             }, delay);
         } else if (this.currentRound > 0 && diff === 0) {
             setTimeout(() => {
-                this.showToast(`¡Empate técnico entre ${ leader.player.name } y ${ chaser.player.name } ! 🔥`, 'warning');
+                this.showToast(`¡Empate técnico entre ${leader.player.name} y ${chaser.player.name}! 🔥`, 'warning');
             }, delay);
         }
     }
@@ -578,7 +580,7 @@ class DominoScoreApp {
     async shareGameResult(winner, standings) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
+
         // Canvas Setup (Story Format 1080x1920 or Square 1080x1080? Let's go Square friendly logic 1080x1350)
         canvas.width = 1080;
         canvas.height = 1080;
@@ -602,13 +604,13 @@ class DominoScoreApp {
 
         // Score
         ctx.font = '60px Inter, sans-serif';
-        ctx.fillText(`${ standings.find(s => s.player.id === winner.id).totalScore } Puntos`, 540, 400);
+        ctx.fillText(`${standings.find(s => s.player.id === winner.id).totalScore} Puntos`, 540, 400);
 
         // Top 3 Table
         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.fillRect(100, 500, 880, 450);
         ctx.fillStyle = '#ffffff';
-        
+
         ctx.font = 'bold 50px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('#  Jugador', 150, 580);
@@ -619,8 +621,8 @@ class DominoScoreApp {
             const y = 680 + (index * 80);
             ctx.textAlign = 'left';
             ctx.font = '50px Inter, sans-serif';
-            ctx.fillText(`${ index + 1 }. ${ item.player.name } `, 150, y);
-            
+            ctx.fillText(`${index + 1}. ${item.player.name}`, 150, y);
+
             ctx.textAlign = 'right';
             ctx.fillText(item.totalScore, 930, y);
         });
@@ -634,17 +636,17 @@ class DominoScoreApp {
         // Convert to Blob
         canvas.toBlob(blob => {
             const file = new File([blob], 'domino-score.png', { type: 'image/png' });
-            
+
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 navigator.share({
                     files: [file],
                     title: 'Resultado del Dominó',
-                    text: `¡${ winner.name } ganó con ${ standings[0].totalScore } puntos!`
+                    text: `¡${winner.name} ganó con ${standings[0].totalScore} puntos!`
                 }).catch(console.error);
             } else {
                 // Download fallback
                 const link = document.createElement('a');
-                link.download = `domino - result - ${ Date.now() }.png`;
+                link.download = `domino-result-${Date.now()}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
             }
@@ -687,11 +689,11 @@ class DominoScoreApp {
 
         // Show Celebration and Option to Share
         this.fireConfetti();
-        
+
         // Show custom modal or alert then share
         // Using confirm for now to prompt share
         setTimeout(() => {
-            if (confirm(`¡${ winner.name } ha ganado! 🏆\n¿Quieres compartir los resultados ? `)) {
+            if (confirm(`¡${winner.name} ha ganado! 🏆\n¿Quieres compartir los resultados?`)) {
                 this.shareGameResult(winner, standings);
             }
             this.showScreen('menu-screen');
@@ -704,12 +706,12 @@ class DominoScoreApp {
 
         if (this.gameHistory.length === 0) {
             container.innerHTML = `
-    < div class="empty-state" >
+                <div class="empty-state">
                     <div class="empty-state-icon">📜</div>
                     <p>No hay juegos guardados</p>
                     <p style="margin-top: 0.5rem; font-size: 0.9rem;">Los juegos finalizados aparecerán aquí</p>
-                </div >
-    `;
+                </div>
+            `;
             return;
         }
 
@@ -724,14 +726,14 @@ class DominoScoreApp {
             });
 
             return `
-    < div class="history-card" onclick = "app.showGameDetail('${game.id}')" >
+                <div class="history-card" onclick="app.showGameDetail('${game.id}')">
                     <div class="history-date">${dateStr}</div>
                     <div class="history-players">
                         ${game.players.map(p => `<span class="history-player-tag">${p.name}</span>`).join('')}
                     </div>
                     <div class="history-winner">🏆 Ganador: ${game.winner.name} (${game.finalStandings[0].totalScore} puntos)</div>
-                </div >
-    `;
+                </div>
+            `;
         }).join('');
     }
 
@@ -750,10 +752,10 @@ class DominoScoreApp {
         });
 
         let html = `
-    < div style = "margin-bottom: 2rem;" >
+            <div style="margin-bottom: 2rem;">
                 <h3 style="margin-bottom: 0.5rem;">Juego del ${dateStr}</h3>
                 <p style="color: var(--text-secondary);">Duración: ${this.calculateGameDuration(game)}</p>
-            </div >
+            </div>
             
             <div class="scoreboard-section">
                 <h3>Clasificación Final</h3>
@@ -812,11 +814,11 @@ class DominoScoreApp {
         const diffMins = Math.floor(diffMs / 60000);
 
         if (diffMins < 60) {
-            return `${ diffMins } minutos`;
+            return `${diffMins} minutos`;
         } else {
             const hours = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
-            return `${ hours }h ${ mins } m`;
+            return `${hours}h ${mins}m`;
         }
     }
 
@@ -900,7 +902,7 @@ class DominoScoreApp {
 
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `toast toast - ${ type } `;
+        toast.className = `toast toast-${type}`;
         toast.textContent = message;
         document.body.appendChild(toast);
 
