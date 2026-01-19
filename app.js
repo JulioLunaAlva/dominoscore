@@ -716,7 +716,10 @@ class DominoScoreApp {
         }
 
         container.innerHTML = this.gameHistory.map(game => {
-            const date = new Date(game.finishedAt);
+            // Fix: Use endedAt if available, fallback to finishedAt for legacy data/safety
+            const dateStrRaw = game.endedAt || game.finishedAt || new Date().toISOString();
+            const date = new Date(dateStrRaw);
+
             const dateStr = date.toLocaleDateString('es-ES', {
                 year: 'numeric',
                 month: 'long',
@@ -742,7 +745,10 @@ class DominoScoreApp {
         if (!game) return;
 
         const container = document.getElementById('game-detail-content');
-        const date = new Date(game.finishedAt);
+        // Fix: Use endedAt
+        const dateStrRaw = game.endedAt || game.finishedAt || new Date().toISOString();
+        const date = new Date(dateStrRaw);
+
         const dateStr = date.toLocaleDateString('es-ES', {
             year: 'numeric',
             month: 'long',
@@ -809,7 +815,10 @@ class DominoScoreApp {
 
     calculateGameDuration(game) {
         const start = new Date(game.startedAt);
-        const end = new Date(game.finishedAt);
+        // Fix: Use endedAt
+        const endStr = game.endedAt || game.finishedAt || new Date().toISOString();
+        const end = new Date(endStr);
+
         const diffMs = end - start;
         const diffMins = Math.floor(diffMs / 60000);
 
