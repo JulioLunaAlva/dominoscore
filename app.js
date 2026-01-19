@@ -575,6 +575,82 @@ class DominoScoreApp {
         }
     }
 
+    async shareGameResult(winner, standings) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Canvas Setup (Story Format 1080x1920 or Square 1080x1080? Let's go Square friendly logic 1080x1350)
+        canvas.width = 1080;
+        canvas.height = 1080;
+
+        // Background
+        const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
+        gradient.addColorStop(0, '#4f46e5');
+        gradient.addColorStop(1, '#06b6d4');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        // Header
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏆 GANADOR 🏆', 540, 150);
+
+        // Winner Info
+        ctx.font = 'bold 120px Inter, sans-serif';
+        ctx.fillText(winner.name, 540, 300);
+
+        // Score
+        ctx.font = '60px Inter, sans-serif';
+        ctx.fillText(`${ standings.find(s => s.player.id === winner.id).totalScore } Puntos`, 540, 400);
+
+        // Top 3 Table
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(100, 500, 880, 450);
+        ctx.fillStyle = '#ffffff';
+        
+        ctx.font = 'bold 50px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('#  Jugador', 150, 580);
+        ctx.textAlign = 'right';
+        ctx.fillText('Pts', 930, 580);
+
+        standings.slice(0, 5).forEach((item, index) => {
+            const y = 680 + (index * 80);
+            ctx.textAlign = 'left';
+            ctx.font = '50px Inter, sans-serif';
+            ctx.fillText(`${ index + 1 }. ${ item.player.name } `, 150, y);
+            
+            ctx.textAlign = 'right';
+            ctx.fillText(item.totalScore, 930, y);
+        });
+
+        // Footer
+        ctx.textAlign = 'center';
+        ctx.font = 'italic 40px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillText('Generado por DominoScore 🎲', 540, 1020);
+
+        // Convert to Blob
+        canvas.toBlob(blob => {
+            const file = new File([blob], 'domino-score.png', { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({
+                    files: [file],
+                    title: 'Resultado del Dominó',
+                    text: `¡${ winner.name } ganó con ${ standings[0].totalScore } puntos!`
+                }).catch(console.error);
+            } else {
+                // Download fallback
+                const link = document.createElement('a');
+                link.download = `domino - result - ${ Date.now() }.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            }
+        });
+    }
+
     finishGame() {
         if (!confirm('¿Finalizar el juego y guardar los resultados?')) {
             return;
@@ -599,22 +675,27 @@ class DominoScoreApp {
         });
 
         // Save to history
-        this.currentGame.finishedAt = new Date().toISOString();
-        this.currentGame.winner = winner;
-        this.currentGame.finalStandings = standings;
-        this.gameHistory.unshift(this.currentGame);
+        this.gameHistory.unshift({
+            ...this.currentGame,
+            endedAt: new Date().toISOString(),
+            winner: winner,
+            finalScores: standings
+        });
 
-        // Clear current game
         this.currentGame = null;
-        this.currentRound = 0;
-
         this.saveData();
-        this.showScreen('menu-screen');
 
+        // Show Celebration and Option to Share
         this.fireConfetti();
+        
+        // Show custom modal or alert then share
+        // Using confirm for now to prompt share
         setTimeout(() => {
-            alert(`¡${ winner.name } ganó el juego con ${ standings[0].totalScore } puntos!`);
-        }, 500);
+            if (confirm(`¡${ winner.name } ha ganado! 🏆\n¿Quieres compartir los resultados ? `)) {
+                this.shareGameResult(winner, standings);
+            }
+            this.showScreen('menu-screen');
+        }, 1000);
     }
 
     // History
