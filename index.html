@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Anotador premium para Dominó Doble 12 - Gestiona jugadores y puntajes">
+    <title>DominoScore</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-512.png">
+    <link rel="apple-touch-icon" href="icons/icon-512.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Onboarding Screen -->
+    <div id="onboarding-screen" class="screen active">
+        <div class="onboarding-container">
+            <div class="logo-container">
+                <img src="icons/icon-512.png" alt="DominoScore Logo" class="app-logo">
+            </div>
+            <h1 class="onboarding-title">DominoScore</h1>
+            <p class="onboarding-subtitle">Anotador Premium de Dominó Doble 12</p>
+
+            <div class="onboarding-features">
+                <div class="feature-item">
+                    <div class="feature-icon">👥</div>
+                    <h3>Gestiona Jugadores</h3>
+                    <p>Agrega jugadores con fotos y guarda su historial</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <h3>Seguimiento de Puntajes</h3>
+                    <p>12 rondas desde la mula del 12 hasta la blanca</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Historial de Juegos</h3>
+                    <p>Revisa partidas anteriores y estadísticas</p>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="app.completeOnboarding()">Comenzar</button>
+        </div>
+    </div>
+
+    <!-- Main Menu Screen -->
+    <div id="menu-screen" class="screen">
+        <div class="header">
+            <img src="icons/icon-512.png" alt="Logo" class="header-logo">
+            <h1>DominoScore</h1>
+        </div>
+
+        <div class="menu-container">
+            <button class="menu-btn" onclick="app.showScreen('new-game-screen')">
+                <span class="menu-icon">🎮</span>
+                <span class="menu-text">Nuevo Juego</span>
+            </button>
+
+            <button class="menu-btn" onclick="app.showScreen('players-screen')">
+                <span class="menu-icon">👥</span>
+                <span class="menu-text">Gestionar Jugadores</span>
+            </button>
+
+            <button class="menu-btn" onclick="app.showScreen('history-screen')">
+                <span class="menu-icon">📜</span>
+                <span class="menu-text">Historial de Juegos</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Players Management Screen -->
+    <div id="players-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Jugadores</h2>
+            <button class="btn-icon" onclick="app.showAddPlayerForm()">+</button>
+        </div>
+
+        <div class="content">
+            <div id="players-list" class="players-list"></div>
+
+            <div id="add-player-form" class="add-player-form hidden">
+                <h3>Agregar Jugador</h3>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="player-name" placeholder="Nombre del jugador">
+                </div>
+
+                <div class="form-group">
+                    <label>Foto (opcional)</label>
+                    <div class="photo-upload">
+                        <input type="file" id="player-photo" accept="image/*" onchange="app.previewPhoto(event)">
+                        <div id="photo-preview" class="photo-preview"></div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-secondary" onclick="app.cancelAddPlayer()">Cancelar</button>
+                    <button class="btn-primary" onclick="app.savePlayer()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Game Setup Screen -->
+    <div id="new-game-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Nuevo Juego</h2>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h3>Selecciona Jugadores (2-10)</h3>
+                <div id="player-selection" class="player-selection"></div>
+            </div>
+
+            <div id="tile-recommendation" class="tile-recommendation hidden">
+                <div class="recommendation-card">
+                    <h3>📋 Recomendación de Fichas</h3>
+                    <p class="recommendation-text"></p>
+                </div>
+            </div>
+
+            <button id="start-game-btn" class="btn-primary" onclick="app.startGame()" disabled>
+                Iniciar Juego
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.confirmExitGame()">←</button>
+            <h2>Juego en Curso</h2>
+        </div>
+
+        <div class="content">
+            <!-- Round Selector -->
+            <div class="round-selector">
+                <button class="round-nav" onclick="app.previousRound()">←</button>
+                <div class="round-info">
+                    <span id="current-round-name" class="round-name"></span>
+                    <span id="current-round-number" class="round-number"></span>
+                </div>
+                <button class="round-nav" onclick="app.nextRound()">→</button>
+            </div>
+
+            <!-- Score Entry -->
+            <div id="score-entry" class="score-entry"></div>
+
+            <!-- Scoreboard -->
+            <div class="scoreboard-section">
+                <h3>Tabla de Posiciones</h3>
+                <div id="scoreboard" class="scoreboard"></div>
+            </div>
+
+            <button class="btn-primary" onclick="app.finishGame()">Finalizar Juego</button>
+        </div>
+    </div>
+
+    <!-- History Screen -->
+    <div id="history-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Historial</h2>
+        </div>
+
+        <div class="content">
+            <div id="history-list" class="history-list"></div>
+        </div>
+    </div>
+
+    <!-- Game Detail Screen -->
+    <div id="game-detail-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('history-screen')">←</button>
+            <h2>Detalle del Juego</h2>
+        </div>
+
+        <div class="content">
+            <div id="game-detail-content"></div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
