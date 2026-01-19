@@ -96,9 +96,16 @@
 
                 <div class="form-group">
                     <label>Foto (opcional)</label>
-                    <div class="photo-upload">
-                        <input type="file" id="player-photo" accept="image/*" onchange="app.previewPhoto(event)">
-                        <div id="photo-preview" class="photo-preview"></div>
+                    <div class="photo-upload-container">
+                        <input type="file" id="player-photo" accept="image/*" onchange="app.previewPhoto(event)"
+                            class="hidden-input">
+                        <label for="player-photo" class="photo-upload-label">
+                            <div id="photo-preview" class="photo-preview empty"></div>
+                            <div class="photo-upload-overlay">
+                                <span class="camera-icon">📷</span>
+                            </div>
+                        </label>
+                        <p class="photo-help-text">Toca el círculo para subir foto</p>
                     </div>
                 </div>
 
@@ -182,7 +189,15 @@
                 <div id="scoreboard" class="scoreboard"></div>
             </div>
 
-            <button class="btn-primary" onclick="app.finishGame()">Finalizar Juego</button>
+            <!-- Game Actions -->
+            <div class="game-actions">
+                <button id="main-next-round-btn" class="btn-primary btn-lg" onclick="app.nextRound()">
+                    Siguiente Ronda ➡️
+                </button>
+                <button class="btn-link-danger" onclick="app.finishGame()">
+                    ⚠️ Finalizar Juego
+                </button>
+            </div>
         </div>
     </div>
 
@@ -210,6 +225,37 @@
         </div>
     </div>
 
+    <!-- Hidden Share Card for Image Generation -->
+    <div id="share-card" class="share-card">
+        <div class="share-background"></div>
+        <div class="share-content">
+            <div class="share-header">
+                <img src="icons/icon-512.png" class="share-logo" alt="Logo">
+                <h2 class="share-app-name">DominoScore</h2>
+            </div>
+
+            <div class="share-winner-section">
+                <div class="share-trophy">🏆</div>
+                <div class="share-winner-avatar-container">
+                    <img id="share-winner-photo" src="" class="share-winner-photo">
+                    <div id="share-winner-initial" class="share-winner-initial"></div>
+                </div>
+                <div class="share-winner-label">GANADOR</div>
+                <h1 id="share-winner-name" class="share-winner-name">Jugador</h1>
+                <div id="share-winner-score" class="share-winner-score">0 pts</div>
+            </div>
+
+            <div class="share-podium" id="share-podium-list">
+                <!-- Podiums injected here -->
+            </div>
+
+            <div class="share-footer">
+                <span class="share-date" id="share-date"></span> • Partido Épico 🎲
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 

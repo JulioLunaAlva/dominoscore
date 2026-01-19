@@ -578,79 +578,92 @@ class DominoScoreApp {
     }
 
     async shareGameResult(winner, standings) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        // Populate Hidden Share Card
+        document.getElementById('share-winner-name').textContent = winner.name;
+        document.getElementById('share-winner-name').className = 'share-winner-name'; // Reset class
+        document.getElementById('share-winner-score').textContent = `${standings[0].totalScore} pts`;
 
-        // Canvas Setup (Story Format 1080x1920 or Square 1080x1080? Let's go Square friendly logic 1080x1350)
-        canvas.width = 1080;
-        canvas.height = 1080;
+        const date = new Date();
+        document.getElementById('share-date').textContent = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
-        // Background
-        const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
-        gradient.addColorStop(0, '#4f46e5');
-        gradient.addColorStop(1, '#06b6d4');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 1080, 1080);
+        // Winner Avatar
+        const winnerImg = document.getElementById('share-winner-photo');
+        const winnerInitial = document.getElementById('share-winner-initial');
+        if (winner.photo) {
+            winnerImg.src = winner.photo;
+            winnerImg.style.display = 'block';
+            winnerInitial.style.display = 'none';
+        } else {
+            winnerImg.style.display = 'none';
+            winnerInitial.textContent = winner.name.charAt(0).toUpperCase();
+            winnerInitial.style.display = 'block';
+        }
 
-        // Header
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 80px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🏆 GANADOR 🏆', 540, 150);
+        // Podium List (Top 3)
+        const podiumContainer = document.getElementById('share-podium-list');
+        podiumContainer.innerHTML = standings.slice(1, 4).map((s, i) => `
+            <div class="share-podium-item">
+                <span class="share-rank">#${i + 2}</span>
+                <span class="share-player-name">${s.player.name}</span>
+                <span class="share-player-score">${s.totalScore}</span>
+            </div>
+        `).join('');
 
-        // Winner Info
-        ctx.font = 'bold 120px Inter, sans-serif';
-        ctx.fillText(winner.name, 540, 300);
+        // Wait a moment for DOM to update
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Score
-        ctx.font = '60px Inter, sans-serif';
-        ctx.fillText(`${standings.find(s => s.player.id === winner.id).totalScore} Puntos`, 540, 400);
+        try {
+            // Generate Image
+            const element = document.getElementById('share-card');
 
-        // Top 3 Table
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.fillRect(100, 500, 880, 450);
-        ctx.fillStyle = '#ffffff';
-
-        ctx.font = 'bold 50px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('#  Jugador', 150, 580);
-        ctx.textAlign = 'right';
-        ctx.fillText('Pts', 930, 580);
-
-        standings.slice(0, 5).forEach((item, index) => {
-            const y = 680 + (index * 80);
-            ctx.textAlign = 'left';
-            ctx.font = '50px Inter, sans-serif';
-            ctx.fillText(`${index + 1}. ${item.player.name}`, 150, y);
-
-            ctx.textAlign = 'right';
-            ctx.fillText(item.totalScore, 930, y);
-        });
-
-        // Footer
-        ctx.textAlign = 'center';
-        ctx.font = 'italic 40px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillText('Generado por DominoScore 🎲', 540, 1020);
-
-        // Convert to Blob
-        canvas.toBlob(blob => {
-            const file = new File([blob], 'domino-score.png', { type: 'image/png' });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                navigator.share({
-                    files: [file],
-                    title: 'Resultado del Dominó',
-                    text: `¡${winner.name} ganó con ${standings[0].totalScore} puntos!`
-                }).catch(console.error);
-            } else {
-                // Download fallback
-                const link = document.createElement('a');
-                link.download = `domino-result-${Date.now()}.png`;
-                link.href = canvas.toDataURL();
-                link.click();
+            // We use 'window.html2canvas' to access global CDN script
+            if (!window.html2canvas) {
+                alert('Error: Componente de compartir no cargado. Revisa tu conexión.');
+                return;
             }
-        });
+
+            const canvas = await window.html2canvas(element, {
+                scale: 2, // Retina quality
+                backgroundColor: '#0f172a',
+                useCORS: true,
+                logging: false,
+                onclone: (clonedDoc) => {
+                    // Ensure visibility in clone
+                    const clonedElement = clonedDoc.getElementById('share-card');
+                    clonedElement.style.position = 'relative';
+                    clonedElement.style.left = '0';
+                    clonedElement.style.top = '0';
+                    clonedElement.style.zIndex = '9999';
+                }
+            });
+
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'domino-ganador.png', { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: '🏆 Ganador del Dominó',
+                            text: `¡${winner.name} ganó con ${standings[0].totalScore} puntos! 🎲`
+                        });
+                    } catch (err) {
+                        console.log('Share canceled or failed', err);
+                    }
+                } else {
+                    // Fallback to specific download
+                    const link = document.createElement('a');
+                    link.download = `domino-ganador-${Date.now()}.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    // Optional: Show toast instead of alert
+                }
+            }, 'image/png');
+
+        } catch (error) {
+            console.error('Error generating share image:', error);
+            alert('No se pudo generar la imagen para compartir.');
+        }
     }
 
     finishGame() {
