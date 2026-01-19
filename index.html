@@ -123,31 +123,17 @@
 
                 <div class="mode-selection">
                     <label class="mode-option">
-                        <input type="radio" name="game-mode" value="12" checked>
+                        <input type="radio" name="game-mode" value="12" checked onchange="app.updateGameSetup()">
                         <span class="mode-card">
-                            <div class="domino-icon domino-12">
-                                <div class="domino-half">
-                                    ${'<div class="dot"></div>'.repeat(12)}
-                                </div>
-                                <div class="domino-half">
-                                    ${'<div class="dot"></div>'.repeat(12)}
-                                </div>
-                            </div>
+                            <img src="icons/domino-12.png" alt="Dominó 12" class="domino-icon-img">
                             <span class="mode-title">Dominó 12</span>
                             <span class="mode-desc">13 Rondas (12-0)</span>
                         </span>
                     </label>
                     <label class="mode-option">
-                        <input type="radio" name="game-mode" value="9">
+                        <input type="radio" name="game-mode" value="9" onchange="app.updateGameSetup()">
                         <span class="mode-card">
-                            <div class="domino-icon domino-9">
-                                <div class="domino-half">
-                                    ${'<div class="dot"></div>'.repeat(9)}
-                                </div>
-                                <div class="domino-half">
-                                    ${'<div class="dot"></div>'.repeat(9)}
-                                </div>
-                            </div>
+                            <img src="icons/domino-9.png" alt="Dominó 9" class="domino-icon-img">
                             <span class="mode-title">Dominó 9</span>
                             <span class="mode-desc">10 Rondas (9-0)</span>
                         </span>
@@ -159,7 +145,7 @@
                     <span class="recommendation-text"></span>
                 </div>
 
-                <div class="player-selection-grid" id="player-selection-list">
+                <div class="player-selection-grid" id="player-selection">
                     <!-- Players injected here -->
                 </div>
             </div>

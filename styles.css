@@ -535,66 +535,17 @@ body::before {
     transform: translateY(-5px);
 }
 
-/* CSS Domino Icons */
-.domino-icon {
+/* Domino Icons */
+.domino-icon-img {
     width: 60px;
-    height: 100px;
-    background: #fff;
-    border-radius: 8px;
-    position: relative;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    height: auto;
     margin-bottom: 1rem;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+    transition: transform 0.3s ease;
 }
 
-.domino-icon::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 5%;
-    right: 5%;
-    height: 2px;
-    background: #ccc;
-    transform: translateY(-50%);
-}
-
-.domino-half {
-    flex: 1;
-    display: grid;
-    padding: 4px;
-    gap: 2px;
-}
-
-/* Dot Patterns */
-.domino-12 .domino-half {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-}
-
-.domino-12 .dot {
-    width: 4px;
-    height: 4px;
-    background: var(--text-primary);
-    /* Use dark color for dots if bg is white, usually black */
-    background: #000;
-    border-radius: 50%;
-    margin: auto;
-}
-
-.domino-9 .domino-half {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-}
-
-/* Custom placement for 9 (3x3 grid) */
-.domino-9 .dot {
-    width: 5px;
-    height: 5px;
-    background: #000;
-    border-radius: 50%;
-    margin: auto;
+.mode-card:hover .domino-icon-img {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .mode-title {
