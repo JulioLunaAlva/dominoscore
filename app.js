@@ -1480,20 +1480,57 @@ class DominoScoreApp {
 
     renderRummyGameScreen() {
         const table = document.getElementById('rummy-score-table');
+        const entryContainer = document.getElementById('rummy-score-entry');
         const players = this.currentGame.players;
         const rounds = this.currentGame.rounds;
 
-        // Calculate Totals
+        // 1. Render Score Entry (Top)
+        entryContainer.innerHTML = players.map(p => `
+            <div class="score-input-card rummy-input-row" data-rummy-player-id="${p.id}">
+                <div class="player-avatar">
+                    ${p.photo
+                ? `<img src="${p.photo}" alt="${p.name}">`
+                : p.name.charAt(0).toUpperCase()
+            }
+                </div>
+                <div class="score-input-info">
+                    <div style="font-weight: bold;">${p.name}</div>
+                    <div style="display: flex; gap: 4px; margin-top: 4px;">
+                        <span class="joker-toggle" onclick="app.toggleRummyJoker(this)" title="Primer Comodín">🃏</span>
+                        <span class="joker-toggle" onclick="app.toggleRummyJoker(this)" title="Segundo Comodín">🃏</span>
+                    </div>
+                </div>
+                <input type="number"
+                       class="rummy-score-input"
+                       inputmode="numeric"
+                       pattern="[0-9]*"
+                       value=""
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                       placeholder="0">
+            </div>
+        `).join('');
+
+        // 2. Calculate Totals
         const totals = players.map(p => {
             return rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0);
         });
 
-        // Header
+        // 3. Render History Table (Bottom)
         let html = `
             <thead>
                 <tr>
                     <th class="rummy-round-cell">#</th>
-                    ${players.map(p => `<th>${p.name.split(' ')[0]}</th>`).join('')}
+                    ${players.map(p => `
+                        <th>
+                            <div class="rummy-player-header">
+                                ${p.photo
+                ? `<img src="${p.photo}" class="player-avatar-mini">`
+                : `<div class="player-avatar-mini-initial">${p.name.charAt(0)}</div>`
+            }
+                                <span>${p.name.split(' ')[0]}</span>
+                            </div>
+                        </th>
+                    `).join('')}
                 </tr>
             </thead>
             <tbody>
@@ -1528,53 +1565,33 @@ class DominoScoreApp {
 
         // Auto-scroll to bottom of table
         const container = document.querySelector('.rummy-table-container');
-        container.scrollTop = container.scrollHeight;
+        if (container) container.scrollTop = container.scrollHeight;
     }
 
-    addRummyRound() {
-        const modal = document.getElementById('rummy-input-modal');
-        const container = document.getElementById('rummy-player-inputs');
-        const roundNum = this.currentGame.rounds.length + 1;
-
-        document.getElementById('rummy-modal-round').textContent = roundNum;
-
-        container.innerHTML = this.currentGame.players.map(p => `
-            <div class="rummy-input-row" data-player-id="${p.id}">
-                <label>${p.name}</label>
-                <div class="rummy-input-controls">
-                    <input type="number" class="rummy-input" value="0" min="0">
-                    <div style="display: flex; gap: 2px;">
-                        <span class="joker-toggle" onclick="this.classList.toggle('active')" title="Primer Comodín">🃏</span>
-                        <span class="joker-toggle" onclick="this.classList.toggle('active')" title="Segundo Comodín">🃏</span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        modal.classList.remove('hidden');
-    }
-
-    closeRummyInput() {
-        document.getElementById('rummy-input-modal').classList.add('hidden');
+    toggleRummyJoker(el) {
+        el.classList.toggle('active');
+        this.playClickSound();
     }
 
     saveRummyRound() {
         const rows = document.querySelectorAll('.rummy-input-row');
         const scores = {};
         const jokerPenalty = this.currentGame.jokerValue || 30;
+        let hasData = false;
 
         rows.forEach(row => {
-            const playerId = row.dataset.playerId;
-            const input = row.querySelector('input');
-
-            // Count active jokers
+            const playerId = row.dataset.rummyPlayerId;
+            const input = row.querySelector('.rummy-score-input');
             const activeJokers = row.querySelectorAll('.joker-toggle.active').length;
 
             let score = parseInt(input.value) || 0;
-            score += (activeJokers * jokerPenalty);
+            if (input.value !== '') hasData = true;
 
+            score += (activeJokers * jokerPenalty);
             scores[playerId] = score;
         });
+
+        if (!hasData && !confirm('¿Guardar ronda con todos en 0?')) return;
 
         this.currentGame.rounds.push({
             id: Date.now(),
@@ -1583,9 +1600,10 @@ class DominoScoreApp {
 
         this.saveData();
         this.renderRummyGameScreen();
-        this.closeRummyInput();
         this.showToast('Ronda guardada ✅', 'success');
         this.playSuccessSound();
+
+        // Reset inputs and jokers visually is handled by re-render
     }
 
     finishRummyGame() {
@@ -1594,6 +1612,11 @@ class DominoScoreApp {
         // Determine winner (Lowest Score)
         const players = this.currentGame.players;
         const rounds = this.currentGame.rounds;
+        if (rounds.length === 0) {
+            this.showToast('No hay rondas registradas', 'warning');
+            return;
+        }
+
         const totals = players.map(p => ({
             player: p,
             totalScore: rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0)
@@ -1601,11 +1624,12 @@ class DominoScoreApp {
 
         const winner = totals[0].player;
 
-        // Reuse share logic but adapt for Rummy? 
+        // Reuse share logic but adapt for Rummy?
         // For now, save to history and show generic success
 
         this.gameHistory.unshift({
             ...this.currentGame,
+            type: 'rummy',
             endedAt: new Date().toISOString(),
             winner: winner,
             finalStandings: totals
