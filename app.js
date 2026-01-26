@@ -6,7 +6,14 @@ class DominoScoreApp {
         this.gameHistory = JSON.parse(localStorage.getItem('dominoscore_history')) || [];
         this.currentGame = JSON.parse(localStorage.getItem('dominoscore_current_game')) || null;
         this.currentRound = parseInt(localStorage.getItem('dominoscore_current_round')) || 0;
-        this.editingPlayerId = null; // Keep this as it's not explicitly removed
+        this.editingPlayerId = null;
+
+        // Settings with defaults
+        this.settings = JSON.parse(localStorage.getItem('dominoscore_settings')) || {
+            audioEnabled: true,
+            voiceEnabled: true,
+            theme: 'dark'
+        };
 
         // Round definitions will be generated based on game mode
         this.roundNames = [];
@@ -18,6 +25,43 @@ class DominoScoreApp {
         this.loadData();
         this.checkOnboarding();
         this.registerServiceWorker();
+
+        // Apply Settings
+        this.applyTheme(this.settings.theme);
+        // Add safety check for elements before accessing properties
+        const audioToggle = document.getElementById('setting-audio');
+        if (audioToggle) audioToggle.checked = this.settings.audioEnabled;
+
+        const voiceToggle = document.getElementById('setting-voice');
+        if (voiceToggle) voiceToggle.checked = this.settings.voiceEnabled;
+
+        // Manual Event Listeners (Fix for module scope issues)
+        const onboardingBtn = document.getElementById('btn-complete-onboarding');
+        if (onboardingBtn) {
+            onboardingBtn.addEventListener('click', () => this.completeOnboarding());
+        }
+
+        // Resume Game Check
+        if (this.currentGame && !this.currentGame.finishedAt) {
+            const resumeBtn = document.getElementById('btn-resume-game');
+            if (resumeBtn) {
+                resumeBtn.classList.remove('hidden');
+            }
+        }
+    }
+
+    resumeGame() {
+        if (this.currentGame) {
+            if (this.currentGame.type === 'rummy') {
+                this.showScreen('rummy-game-screen');
+                this.renderRummyGameScreen();
+            } else {
+                this.showScreen('game-screen');
+                this.updateRoundInfo();
+                this.renderScoreEntry();
+                this.renderScoreboard();
+            }
+        }
     }
 
     registerServiceWorker() {
@@ -105,7 +149,15 @@ class DominoScoreApp {
         nextScreen.style.opacity = '';
 
         // Refresh content when showing certain screens
-        if (screenId === 'players-screen') {
+        if (screenId === 'menu-screen') {
+            // Re-check resume button visibility
+            const resumeBtn = document.getElementById('btn-resume-game');
+            if (this.currentGame && !this.currentGame.finishedAt) {
+                if (resumeBtn) resumeBtn.classList.remove('hidden');
+            } else {
+                if (resumeBtn) resumeBtn.classList.add('hidden');
+            }
+        } else if (screenId === 'players-screen') {
             this.renderPlayersList();
         } else if (screenId === 'new-game-screen') {
             this.renderPlayerSelection();
@@ -113,6 +165,10 @@ class DominoScoreApp {
             this.renderHistory();
         } else if (screenId === 'game-screen') {
             this.renderGameScreen();
+        } else if (screenId === 'rummy-setup-screen') {
+            this.renderRummySetup();
+        } else if (screenId === 'rummy-game-screen') {
+            this.renderRummyGameScreen();
         }
     }
 
@@ -128,7 +184,38 @@ class DominoScoreApp {
 
     cancelAddPlayer() {
         document.getElementById('add-player-form').classList.add('hidden');
+        document.getElementById('player-name').value = '';
+        document.getElementById('player-photo').value = '';
+        const preview = document.getElementById('photo-preview');
+        preview.innerHTML = '';
+        preview.classList.add('empty');
         this.editingPlayerId = null;
+
+        // Reset button text
+        const saveBtn = document.querySelector('#add-player-form .btn-primary');
+        if (saveBtn) saveBtn.textContent = 'Guardar';
+    }
+
+    editPlayer(playerId) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) return;
+
+        this.editingPlayerId = playerId;
+        document.getElementById('player-name').value = player.name;
+
+        const preview = document.getElementById('photo-preview');
+        if (player.photo) {
+            preview.innerHTML = `<img src="${player.photo}">`;
+            preview.classList.remove('empty');
+        } else {
+            preview.innerHTML = '';
+            preview.classList.add('empty');
+        }
+
+        const saveBtn = document.querySelector('#add-player-form .btn-primary');
+        if (saveBtn) saveBtn.textContent = 'Actualizar';
+
+        this.showAddPlayerForm();
     }
 
     previewPhoto(event) {
@@ -257,10 +344,10 @@ class DominoScoreApp {
     }
 
     renderPlayersList() {
-        const container = document.getElementById('players-list');
+        const list = document.getElementById('players-list');
 
         if (this.players.length === 0) {
-            container.innerHTML = `
+            list.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">👥</div>
                     <p>No hay jugadores registrados</p>
@@ -270,18 +357,27 @@ class DominoScoreApp {
             return;
         }
 
-        container.innerHTML = this.players.map(player => `
-            <div class="player-card">
-                ${player.photo
-                ? `<img src="${player.photo}" alt="${player.name}" class="player-avatar">`
-                : `<div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>`
+        list.innerHTML = this.players.map(player => `
+            <div class="player-card" onclick="app.openPlayerStats('${player.id}')">
+                <div class="player-avatar">
+                    ${player.photo
+                ? `<img src="${player.photo}" alt="${player.name}">`
+                : player.name.charAt(0).toUpperCase()
             }
+                </div>
                 <div class="player-info">
                     <div class="player-name">${player.name}</div>
-                    <div class="player-stats">${player.gamesPlayed} juegos • ${player.gamesWon} victorias</div>
+                    <div class="player-stats">
+                        ${this.getPlayerStatsSummary(player.id)}
+                    </div>
                 </div>
                 <div class="player-actions">
-                    <button class="btn-small btn-delete" onclick="app.deletePlayer('${player.id}')">Eliminar</button>
+                    <button class="btn-icon-small" onclick="event.stopPropagation(); app.editPlayer('${player.id}')" title="Editar">
+                        ✏️
+                    </button>
+                    <button class="btn-icon-small" onclick="event.stopPropagation(); app.deletePlayer('${player.id}')" title="Eliminar">
+                        🗑️
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -330,22 +426,31 @@ class DominoScoreApp {
         const playerCount = selectedCards.length;
         const startBtn = document.getElementById('start-game-btn');
         const recommendation = document.getElementById('tile-recommendation');
+        const modeInput = document.querySelector('input[name="game-mode"]:checked');
+        const mode = modeInput ? parseInt(modeInput.value) : 12;
 
         if (playerCount >= 2 && playerCount <= 10) {
             startBtn.disabled = false;
             recommendation.classList.remove('hidden');
 
             let tilesPerPlayer;
-            if (playerCount <= 6) {
-                tilesPerPlayer = 12;
-            } else if (playerCount <= 8) {
-                tilesPerPlayer = 10;
-            } else {
-                tilesPerPlayer = 8;
+            const recommendationText = recommendation.querySelector('.recommendation-text');
+
+            if (mode === 9) { // Double-9 (55 tiles)
+                if (playerCount === 2) tilesPerPlayer = 14;
+                else if (playerCount === 3) tilesPerPlayer = 13;
+                else if (playerCount === 4) tilesPerPlayer = 13;
+                else if (playerCount === 5) tilesPerPlayer = 11;
+                else if (playerCount === 6) tilesPerPlayer = 9;
+                else tilesPerPlayer = Math.floor(55 / playerCount);
+            } else { // Double-12 (91 tiles)
+                if (playerCount <= 6) tilesPerPlayer = 12; // Standard
+                else if (playerCount <= 8) tilesPerPlayer = 10;
+                else tilesPerPlayer = Math.floor(91 / playerCount); // 9-10 players -> 9 tiles
             }
 
-            recommendation.querySelector('.recommendation-text').textContent =
-                `Con ${playerCount} jugador${playerCount > 1 ? 'es' : ''}, cada uno debe tomar ${tilesPerPlayer} fichas.`;
+            recommendationText.textContent =
+                `Con ${playerCount} jugador${playerCount > 1 ? 'es' : ''} y Doble-${mode}, cada uno debe tomar ${tilesPerPlayer} fichas.`;
         } else {
             startBtn.disabled = true;
             recommendation.classList.add('hidden');
@@ -741,13 +846,20 @@ class DominoScoreApp {
                 minute: '2-digit'
             });
 
+            const isRummy = game.type === 'rummy';
+            const typeLabel = isRummy ? '🃏 Rummy' : '🎲 Dominó';
+            const typeClass = isRummy ? 'badge-rummy' : 'badge-domino';
+
             const standings = game.finalScores || game.finalStandings || [];
             const winnerScore = standings.length > 0 ? standings[0].totalScore : 0;
 
             return `
                 <div class="history-card" onclick="app.showGameDetail('${game.id}')">
-                    <div class="history-date">${dateStr}</div>
-                    <div class="history-players">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div class="history-date">${dateStr}</div>
+                        <span class="game-type-badge ${typeClass}">${typeLabel}</span>
+                    </div>
+                    <div class="history-players" style="margin-bottom: 0.5rem;">
                         ${game.players.map(p => `<span class="history-player-tag">${p.name}</span>`).join('')}
                     </div>
                     <div class="history-winner">🏆 Ganador: ${game.winner.name} (${winnerScore} puntos)</div>
@@ -777,9 +889,14 @@ class DominoScoreApp {
         const standings = game.finalScores || game.finalStandings || [];
 
         let html = `
-            <div style="margin-bottom: 2rem;">
-                <h3 style="margin-bottom: 0.5rem;">Juego del ${dateStr}</h3>
-                <p style="color: var(--text-secondary);">Duración: ${this.calculateGameDuration(game)}</p>
+            <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h3 style="margin-bottom: 0.5rem;">Juego del ${dateStr}</h3>
+                    <p style="color: var(--text-secondary);">Duración: ${this.calculateGameDuration(game)}</p>
+                </div>
+                <button class="btn-small" onclick="app.resumeGameFromHistory('${game.id}')" style="background: rgba(99, 102, 241, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color);">
+                    ♻️ Reanudar
+                </button>
             </div>
             
             <div class="scoreboard-section">
@@ -832,6 +949,49 @@ class DominoScoreApp {
         this.showScreen('game-detail-screen');
     }
 
+    resumeGameFromHistory(gameId) {
+        if (this.currentGame && !confirm('⚠️ Tienes un juego activo. Si reanudas este juego antiguo, perderás el progreso actual. ¿Continuar?')) {
+            return;
+        }
+
+        const gameIndex = this.gameHistory.findIndex(g => g.id === gameId);
+        if (gameIndex === -1) return;
+
+        const gameToResume = this.gameHistory[gameIndex];
+
+        // Restore game state
+        this.currentGame = {
+            ...gameToResume,
+            finishedAt: null, // Clear finished status
+            endedAt: null,
+            winner: null,
+            finalScores: null,
+            finalStandings: null
+        };
+
+        // Remove from history since it's active again
+        this.gameHistory.splice(gameIndex, 1);
+
+        this.currentRound = this.currentGame.rounds.length; // Actually round index is 0-based, maybe we need to find the last played round?
+        // Wait, rounds array usually has all rounds initialized? 
+        // In this app, rounds are pre-generated.
+        // We need to find the first round that isn't fully scored? Or just let user navigate?
+        // Let's set to the last round or 0 safely.
+        this.currentRound = 0; // User can navigate manually
+
+        this.saveData();
+
+        if (this.currentGame.type === 'rummy') {
+            this.showScreen('rummy-game-screen');
+            this.renderRummyGameScreen();
+        } else {
+            this.showScreen('game-screen');
+            this.renderGameScreen(); // Force re-render with restored data
+        }
+
+        this.showToast('Juego reanudado desde el historial ♻️', 'success');
+    }
+
     calculateGameDuration(game) {
         const start = new Date(game.startedAt);
         // Fix: Use endedAt
@@ -853,7 +1013,142 @@ class DominoScoreApp {
     // --- Premium Features ---
 
     // 🔊 Voice Announcer
+    // Settings Logic
+    toggleSetting(key) {
+        if (this.settings.hasOwnProperty(key)) {
+            this.settings[key] = !this.settings[key];
+            this.saveSettings();
+
+            // UX Feedback
+            if (this.settings[key]) {
+                this.playSuccessSound();
+            }
+        }
+    }
+
+    setTheme(themeName) {
+        this.settings.theme = themeName;
+        this.saveSettings();
+        this.applyTheme(themeName);
+    }
+
+    applyTheme(themeName) {
+        // UI Feedback for selection
+        document.querySelectorAll('.theme-preview').forEach(el => el.classList.remove('active'));
+        const activePreview = document.getElementById(`theme-${themeName}`);
+        if (activePreview) activePreview.classList.add('active');
+
+        // Apply Logic (Future: Update CSS variables based on theme)
+        // For now, we will just use body class
+        document.body.className = `theme-${themeName}`;
+
+        // Simple CSS Variable Injection for "Classic Green" or "Light"
+        const root = document.documentElement;
+        if (themeName === 'green') {
+            root.style.setProperty('--background-dark', '#052e16'); // Dark Green
+            root.style.setProperty('--background-card', '#14532d'); // Green Card
+            root.style.setProperty('--primary-color', '#4ade80');   // Light Green
+            root.style.setProperty('--primary-gradient', 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)');
+        } else if (themeName === 'light') {
+            root.style.setProperty('--background-dark', '#f8fafc');
+            root.style.setProperty('--background-card', '#ffffff');
+            root.style.setProperty('--text-primary', '#0f172a');
+            root.style.setProperty('--text-secondary', '#64748b');
+            // Adjust header gradients for light mode visibility if needed
+        } else {
+            // Revert to Dark (Default)
+            root.style.removeProperty('--background-dark');
+            root.style.removeProperty('--background-card');
+            root.style.removeProperty('--primary-color');
+            root.style.removeProperty('--primary-gradient');
+            root.style.removeProperty('--text-primary');
+            root.style.removeProperty('--text-secondary');
+        }
+    }
+
+    saveSettings() {
+        localStorage.setItem('dominoscore_settings', JSON.stringify(this.settings));
+    }
+
+    factoryReset() {
+        if (confirm('⚠️ ¡PELIGRO! ⚠️\n\nEstás a punto de borrar TODOS los datos:\n- Jugadores y sus fotos\n- Historial de partidas\n- Juegos activos\n\n¿Estás seguro de continuar?')) {
+            if (confirm('¿Seguro Seguro? Esta acción no se puede deshacer.')) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+    }
+
+    // 💾 Backup System
+    exportData() {
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('dominoscore_')) {
+                data[key] = localStorage.getItem(key);
+            }
+        }
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `DominoScore_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast('Copia de seguridad descargada 📥', 'success');
+    }
+
+    importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                let count = 0;
+
+                // Validate some keys
+                if (!data['dominoscore_players'] && !data['dominoscore_history']) {
+                    throw new Error('Formato de archivo inválido');
+                }
+
+                if (confirm('⚠️ Esto reemplazará tus datos actuales con los del archivo. ¿Continuar?')) {
+                    // Clear existing app data first to avoid conflicts
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('dominoscore_')) localStorage.removeItem(key);
+                    });
+
+                    Object.keys(data).forEach(key => {
+                        if (key.startsWith('dominoscore_')) {
+                            localStorage.setItem(key, data[key]);
+                            count++;
+                        }
+                    });
+
+                    alert(`¡Éxito! Se restauraron ${count} elementos. La app se reiniciará.`);
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error al importar: El archivo está dañado o no es válido.');
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset input
+        event.target.value = '';
+    }
+
     speak(text) {
+        if (!this.settings.voiceEnabled) return;
+
+        // Existing logic...
         if ('speechSynthesis' in window) {
             // Cancel previous speech to avoid queue buildup
             window.speechSynthesis.cancel();
@@ -900,17 +1195,20 @@ class DominoScoreApp {
     }
 
     playClickSound() {
+        if (!this.settings.audioEnabled) return;
         // Crisp "Pop" sound
         this.playTone(600, 'sine', 0.1, 0.1);
     }
 
     playSuccessSound() {
+        if (!this.settings.audioEnabled) return;
         // "Ding ding!"
         this.playTone(800, 'sine', 0.1);
         setTimeout(() => this.playTone(1200, 'sine', 0.2), 100);
     }
 
     playWarningSound() {
+        if (!this.settings.audioEnabled) return;
         // Low "Boop"
         this.playTone(300, 'triangle', 0.3);
     }
@@ -1023,19 +1321,329 @@ class DominoScoreApp {
         requestAnimationFrame(animate);
         this.vibrate([50, 50, 50, 50, 100]);
     }
+
+    // --- Stats Logic ---
+    getPlayerStatsSummary(playerId) {
+        const games = this.gameHistory.filter(g => g.players.some(p => p.id === playerId));
+        const wins = games.filter(g => g.winner && g.winner.id === playerId).length;
+        return `${games.length} juegos • ${wins} victorias`;
+    }
+
+    openPlayerStats(playerId) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) return;
+
+        // Calculate Stats
+        const games = this.gameHistory.filter(g => g.players.some(p => p.id === playerId));
+        const totalGames = games.length;
+        const wins = games.filter(g => g.winner && g.winner.id === playerId).length;
+        const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+
+        let bestScore = '-';
+        // Logic: For Rummy, best score is lowest. For Domino, winning score is lowest (if counting penalties) or just "Won".
+        // Let's iterate wins to find "best" margin or just lowest score in Rummy.
+
+        // Populate UI
+        document.getElementById('stats-name').textContent = player.name;
+
+        const photo = document.getElementById('stats-photo');
+        const initial = document.getElementById('stats-initial');
+        if (player.photo) {
+            photo.src = player.photo;
+            photo.classList.remove('hidden');
+            initial.style.display = 'none';
+        } else {
+            photo.classList.add('hidden');
+            initial.style.display = 'flex';
+            initial.textContent = player.name.charAt(0).toUpperCase();
+        }
+
+        document.getElementById('stats-games').textContent = totalGames;
+        document.getElementById('stats-wins').textContent = wins;
+        document.getElementById('stats-winrate').textContent = `${winRate}%`;
+        document.getElementById('stats-best').textContent = bestScore; // Simplified for now
+
+        // History List
+        const list = document.getElementById('stats-history-list');
+        if (totalGames === 0) {
+            list.innerHTML = '<p style="color: var(--text-secondary);">Sin partidas registradas</p>';
+        } else {
+            list.innerHTML = games.slice(0, 5).map(g => {
+                const isWinner = g.winner && g.winner.id === playerId;
+                const resultClass = isWinner ? 'success-color' : 'text-secondary';
+                const resultText = isWinner ? 'VICTORIA 🏆' : 'DERROTA';
+                const date = new Date(g.endedAt || g.finishedAt || Date.now()).toLocaleDateString();
+
+                return `
+                    <div class="history-card" style="padding: 0.75rem;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="font-weight:bold; color: var(--${resultClass === 'success-color' ? 'success' : 'danger'}-color)">${resultText}</span>
+                            <span class="history-date">${date}</span>
+                        </div>
+                        <div style="font-size:0.8rem; margin-top:0.25rem;">${g.type === 'rummy' ? 'Rummy' : 'Dominó'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        this.showScreen('player-stats-screen');
+    }
+
+    // --- Rummy Logic ---
+
+    renderRummySetup() {
+        const container = document.getElementById('rummy-player-selection');
+
+        if (this.players.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <p>No hay jugadores registrados</p>
+                    <button class="btn-primary" onclick="app.showScreen('players-screen')">Agregar Jugadores</button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = this.players.map(player => `
+            <div class="player-select-card" data-rummy-player-id="${player.id}" onclick="app.toggleRummyPlayer('${player.id}')">
+                ${player.photo
+                ? `<img src="${player.photo}" class="player-avatar">`
+                : `<div class="player-avatar">${player.name.charAt(0)}</div>`
+            }
+                <div class="player-info">
+                    <div class="player-name">${player.name}</div>
+                </div>
+            </div>
+        `).join('');
+
+        this.updateRummySetup();
+    }
+
+    toggleRummyPlayer(playerId) {
+        const card = document.querySelector(`[data-rummy-player-id="${playerId}"]`);
+        card.classList.toggle('selected');
+        this.updateRummySetup();
+    }
+
+    updateRummySetup() {
+        const selectedCards = document.querySelectorAll('#rummy-player-selection .selected');
+        const count = selectedCards.length;
+        const startBtn = document.getElementById('start-rummy-btn');
+        const recommendation = document.getElementById('rummy-tile-recommendation');
+
+        if (count >= 2) {
+            startBtn.disabled = false;
+            recommendation.classList.remove('hidden');
+
+            // Standard Rummy (106 tiles) logic
+            // 2-4 players: 14 tiles
+            // 5+ players: Not standard with 1 set, but usually 10-12
+            let tiles = 14;
+            if (count > 4) tiles = 10;
+
+            recommendation.querySelector('.recommendation-text').textContent =
+                `Con ${count} jugadores, cada uno debe tomar ${tiles} fichas.`;
+        } else {
+            startBtn.disabled = true;
+            recommendation.classList.add('hidden');
+        }
+    }
+
+    adjustJokerValue(delta) {
+        const input = document.getElementById('rummy-joker-value');
+        let val = parseInt(input.value) + delta;
+        if (val < 0) val = 0;
+        input.value = val;
+    }
+
+    startRummyGame() {
+        const selectedCards = document.querySelectorAll('#rummy-player-selection .selected');
+        const selectedPlayers = Array.from(selectedCards).map(card => {
+            return this.players.find(p => p.id === card.dataset.rummyPlayerId);
+        });
+
+        const jokerValue = parseInt(document.getElementById('rummy-joker-value').value);
+
+        this.currentGame = {
+            id: Date.now().toString(),
+            type: 'rummy',
+            jokerValue: jokerValue,
+            players: selectedPlayers,
+            rounds: [], // Dynamic rounds
+            startedAt: new Date().toISOString()
+        };
+
+        this.saveData();
+        this.showScreen('rummy-game-screen');
+        this.showToast('¡Partida de Rummy iniciada! 🃏', 'success');
+    }
+
+    renderRummyGameScreen() {
+        const table = document.getElementById('rummy-score-table');
+        const players = this.currentGame.players;
+        const rounds = this.currentGame.rounds;
+
+        // Calculate Totals
+        const totals = players.map(p => {
+            return rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0);
+        });
+
+        // Header
+        let html = `
+            <thead>
+                <tr>
+                    <th class="rummy-round-cell">#</th>
+                    ${players.map(p => `<th>${p.name.split(' ')[0]}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        // Rounds
+        rounds.forEach((round, i) => {
+            html += `
+                <tr>
+                    <td class="rummy-round-cell">${i + 1}</td>
+                    ${players.map(p => {
+                const score = round.scores[p.id];
+                // Highlight winner (0) or high scores
+                const style = score === 0 ? 'color: var(--success-color); font-weight: bold;' : '';
+                return `<td style="${style}">${score}</td>`;
+            }).join('')}
+                </tr>
+            `;
+        });
+
+        // Totals Row
+        html += `
+            <tr style="border-top: 2px solid var(--border-color); background: rgba(99, 102, 241, 0.05);">
+                <td class="rummy-round-cell">Σ</td>
+                ${totals.map(t => `<td style="font-weight: 800; font-size: 1.1rem;">${t}</td>`).join('')}
+            </tr>
+            </tbody>
+        `;
+
+        table.innerHTML = html;
+        document.getElementById('rummy-round-badge').textContent = `Ronda ${rounds.length + 1}`;
+
+        // Auto-scroll to bottom of table
+        const container = document.querySelector('.rummy-table-container');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    addRummyRound() {
+        const modal = document.getElementById('rummy-input-modal');
+        const container = document.getElementById('rummy-player-inputs');
+        const roundNum = this.currentGame.rounds.length + 1;
+
+        document.getElementById('rummy-modal-round').textContent = roundNum;
+
+        container.innerHTML = this.currentGame.players.map(p => `
+            <div class="rummy-input-row" data-player-id="${p.id}">
+                <label>${p.name}</label>
+                <div class="rummy-input-controls">
+                    <input type="number" class="rummy-input" value="0" min="0">
+                    <div style="display: flex; gap: 2px;">
+                        <span class="joker-toggle" onclick="this.classList.toggle('active')" title="Primer Comodín">🃏</span>
+                        <span class="joker-toggle" onclick="this.classList.toggle('active')" title="Segundo Comodín">🃏</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        modal.classList.remove('hidden');
+    }
+
+    closeRummyInput() {
+        document.getElementById('rummy-input-modal').classList.add('hidden');
+    }
+
+    saveRummyRound() {
+        const rows = document.querySelectorAll('.rummy-input-row');
+        const scores = {};
+        const jokerPenalty = this.currentGame.jokerValue || 30;
+
+        rows.forEach(row => {
+            const playerId = row.dataset.playerId;
+            const input = row.querySelector('input');
+
+            // Count active jokers
+            const activeJokers = row.querySelectorAll('.joker-toggle.active').length;
+
+            let score = parseInt(input.value) || 0;
+            score += (activeJokers * jokerPenalty);
+
+            scores[playerId] = score;
+        });
+
+        this.currentGame.rounds.push({
+            id: Date.now(),
+            scores: scores
+        });
+
+        this.saveData();
+        this.renderRummyGameScreen();
+        this.closeRummyInput();
+        this.showToast('Ronda guardada ✅', 'success');
+        this.playSuccessSound();
+    }
+
+    finishRummyGame() {
+        if (!confirm('¿Finalizar partida de Rummy?')) return;
+
+        // Determine winner (Lowest Score)
+        const players = this.currentGame.players;
+        const rounds = this.currentGame.rounds;
+        const totals = players.map(p => ({
+            player: p,
+            totalScore: rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0)
+        })).sort((a, b) => a.totalScore - b.totalScore); // Ascending for Rummy
+
+        const winner = totals[0].player;
+
+        // Reuse share logic but adapt for Rummy? 
+        // For now, save to history and show generic success
+
+        this.gameHistory.unshift({
+            ...this.currentGame,
+            endedAt: new Date().toISOString(),
+            winner: winner,
+            finalStandings: totals
+        });
+
+        this.currentGame = null;
+        this.saveData();
+
+        this.fireConfetti();
+        alert(`¡${winner.name} ha ganado con solo ${totals[0].totalScore} puntos! 🏆`);
+        this.showScreen('menu-screen');
+    }
 }
 
-// Initialize app
-const app = new DominoScoreApp();
-window.app = app;
 
-// Add global click listener for haptic feedback & sound
-document.addEventListener('click', (e) => {
-    if (e.target.closest('button') || e.target.closest('.player-select-card') || e.target.closest('.history-card')) {
-        app.vibrate(10);
-        app.playClickSound();
+// Robust Initialization
+window.addEventListener('DOMContentLoaded', () => {
+    try {
+        console.log('DOM Loaded, initializing App...');
+        window.app = new DominoScoreApp();
+
+        // Global click listener for haptic feedback & sound
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('.player-select-card') || e.target.closest('.history-card')) {
+                if (window.app && window.app.vibrate) {
+                    window.app.vibrate(10);
+                    window.app.playClickSound();
+                }
+            }
+        });
+
+        // Setup connection monitoring
+        if (window.app) {
+            window.app.setupConnectionMonitoring();
+        }
+    } catch (e) {
+        console.error('App init failed:', e);
+        // Fallback for user awareness
+        alert('Error al iniciar la aplicación: ' + e.message);
     }
 });
-
-// Setup connection monitoring
-app.setupConnectionMonitoring();
