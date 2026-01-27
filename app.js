@@ -215,7 +215,7 @@ class DominoScoreApp {
         const saveBtn = document.querySelector('#add-player-form .btn-primary');
         if (saveBtn) saveBtn.textContent = 'Actualizar';
 
-        this.showAddPlayerForm();
+        document.getElementById('add-player-form').classList.remove('hidden');
     }
 
     previewPhoto(event) {
@@ -1523,10 +1523,12 @@ class DominoScoreApp {
                     ${players.map(p => `
                         <th>
                             <div class="rummy-player-header">
-                                ${p.photo
-                ? `<img src="${p.photo}" class="player-avatar-mini">`
+                                <div class="player-avatar-mini">
+                                    ${p.photo
+                ? `<img src="${p.photo}">`
                 : `<div class="player-avatar-mini-initial">${p.name.charAt(0)}</div>`
             }
+                                </div>
                                 <span>${p.name.split(' ')[0]}</span>
                             </div>
                         </th>
