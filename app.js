@@ -756,10 +756,22 @@ class DominoScoreApp {
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
-                        link.href = canvas.toDataURL();
-                        link.click();
-                        // Optional: Show toast instead of alert
+                        await navigator.share({
+                            files: [file],
+                            title: '🏆 Ganador del Dominó',
+                            text: `¡${winner.name} ganó con ${standings[0].totalScore} puntos! 🎲`
+                        });
+                    } catch (err) {
+                        console.log('Share canceled or failed', err);
                     }
+                } else {
+                    // Fallback to specific download
+                    const link = document.createElement('a');
+                    link.download = `domino-ganador-${Date.now()}.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    this.showToast('Imagen guardada 📥', 'success');
+                }
             }, 'image/png');
 
         } catch (error) {
