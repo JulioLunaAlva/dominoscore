@@ -903,9 +903,14 @@ class DominoScoreApp {
                     <h3 style="margin-bottom: 0.5rem;">Juego del ${dateStr}</h3>
                     <p style="color: var(--text-secondary);">Duración: ${this.calculateGameDuration(game)}</p>
                 </div>
-                <button class="btn-small" onclick="app.resumeGameFromHistory('${game.id}')" style="background: rgba(99, 102, 241, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color);">
-                    ♻️ Reanudar
-                </button>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn-small" onclick="app.shareGameFromHistory('${game.id}')" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid #fbbf24;">
+                        📸 Compartir
+                    </button>
+                    <button class="btn-small" onclick="app.resumeGameFromHistory('${game.id}')" style="background: rgba(99, 102, 241, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color);">
+                        ♻️ Reanudar
+                    </button>
+                </div>
             </div>
             
             <div class="scoreboard-section">
@@ -1002,6 +1007,13 @@ class DominoScoreApp {
         }
 
         this.showToast('Juego reanudado desde el historial ♻️', 'success');
+    }
+
+    shareGameFromHistory(gameId) {
+        const game = this.gameHistory.find(g => g.id === gameId);
+        if (game) {
+            this.shareGame(game);
+        }
     }
 
     calculateGameDuration(game) {
@@ -1579,10 +1591,11 @@ class DominoScoreApp {
                 </div>
                 <input type="number"
                        class="rummy-score-input"
+                       data-player-id="${p.id}"
                        inputmode="numeric"
                        pattern="[0-9]*"
                        value=""
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); app.updateRummyLeaders()"
                        placeholder="0">
             </div>
         `).join('');
@@ -1604,20 +1617,20 @@ class DominoScoreApp {
         this.updateTimerDisplay();
         this.updateTimerControls();
 
-        // 2. Calculate Totals
+        // 2. Calculate Totals (Just historical for the table body)
         const totals = players.map(p => {
             return rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0);
         });
 
-        // Calculate Ranks for the header
+        // Calculate Ranks for the header (Initial render)
         const rankedPlayers = [...players]
             .map(p => ({
                 id: p.id,
                 score: rounds.reduce((sum, r) => sum + (r.scores[p.id] || 0), 0)
             }))
-            .sort((a, b) => a.score - b.score); // Ascending (Lower is better in Rummy)
+            .sort((a, b) => a.score - b.score);
 
-        return `
+        let html = `
             <thead>
                 <tr>
                     <th class="rummy-round-cell">#</th>
@@ -1632,15 +1645,15 @@ class DominoScoreApp {
 
             return `
                         <th>
-                            <div class="rummy-player-header">
+                            <div class="rummy-player-header" id="header-player-${p.id}">
                                 <div style="position:relative;">
-                                    <div class="player-avatar-mini ${headerRankClass}">
+                                    <div class="player-avatar-mini ${headerRankClass}" id="avatar-player-${p.id}">
                                         ${p.photo
                     ? `<img src="${p.photo}">`
                     : `<div class="player-avatar-mini-initial">${p.name.charAt(0)}</div>`
                 }
                                     </div>
-                                    ${headerIcon ? `<div style="position:absolute; top:-5px; right:-5px; font-size:1rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${headerIcon}</div>` : ''}
+                                    <div id="badge-player-${p.id}" style="position:absolute; top:-5px; right:-5px; font-size:1rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${headerIcon}</div>
                                 </div>
                                 <span>${p.name.split(' ')[0]}</span>
                             </div>
@@ -1682,6 +1695,57 @@ class DominoScoreApp {
         // Auto-scroll to bottom of table
         const container = document.querySelector('.rummy-table-container');
         if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    updateRummyLeaders() {
+        if (!this.currentGame || this.currentGame.type !== 'rummy') return;
+
+        const players = this.currentGame.players;
+        const rounds = this.currentGame.rounds;
+
+        // Calculate Historical Scores
+        const historicalScores = {};
+        players.forEach(p => {
+            historicalScores[p.id] = rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0);
+        });
+
+        // Add Current Input Scores
+        const inputs = document.querySelectorAll('.rummy-score-input');
+        inputs.forEach(input => {
+            const pid = input.dataset.playerId;
+            const val = parseInt(input.value) || 0;
+            if (historicalScores[pid] !== undefined) {
+                historicalScores[pid] += val;
+            }
+        });
+
+        // Determine Ranks
+        const rankedIds = Object.keys(historicalScores)
+            .sort((a, b) => historicalScores[a] - historicalScores[b]); // Ascending
+
+        // Update UI
+        players.forEach(p => {
+            const rankIndex = rankedIds.indexOf(p.id);
+            const avatarParams = document.getElementById(`avatar-player-${p.id}`);
+            const badgeParams = document.getElementById(`badge-player-${p.id}`);
+
+            if (avatarParams && badgeParams) {
+                // Remove old classes
+                avatarParams.classList.remove('header-rank-1', 'header-rank-2', 'header-rank-3');
+                badgeParams.innerHTML = '';
+
+                if (rankIndex === 0) {
+                    avatarParams.classList.add('header-rank-1');
+                    badgeParams.innerHTML = '🥇';
+                } else if (rankIndex === 1) {
+                    avatarParams.classList.add('header-rank-2');
+                    badgeParams.innerHTML = '🥈';
+                } else if (rankIndex === 2) {
+                    avatarParams.classList.add('header-rank-3');
+                    badgeParams.innerHTML = '🥉';
+                }
+            }
+        });
     }
 
     toggleRummyJoker(el) {
