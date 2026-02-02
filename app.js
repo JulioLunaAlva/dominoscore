@@ -943,9 +943,9 @@ class DominoScoreApp {
                             </tr>
                         </thead>
                         <tbody>
-                            ${game.rounds.map(round => `
+                            ${game.rounds.map((round, i) => `
                                 <tr style="border-bottom: 1px solid var(--border-color);">
-                                    <td style="padding: 0.75rem;">${round.roundName}</td>
+                                    <td style="padding: 0.75rem;">${round.roundName || `Ronda ${i + 1}`}</td>
                                     ${game.players.map(p => `<td style="padding: 0.75rem; text-align: center;">${round.scores[p.id]}</td>`).join('')}
                                 </tr>
                             `).join('')}
