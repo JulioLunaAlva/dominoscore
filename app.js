@@ -937,7 +937,10 @@ class DominoScoreApp {
                             `).join('')}
                             <tr style="font-weight: 700; background: var(--background-card);">
                                 <td style="padding: 0.75rem;">Total</td>
-                                ${standings.map(s => `<td style="padding: 0.75rem; text-align: center;">${s.totalScore}</td>`).join('')}
+                                ${game.players.map(p => {
+                const playerStanding = standings.find(s => s.player.id === p.id);
+                return `<td style="padding: 0.75rem; text-align: center;">${playerStanding ? playerStanding.totalScore : 0}</td>`;
+            }).join('')}
                             </tr>
                         </tbody>
                     </table>
@@ -1470,11 +1473,18 @@ class DominoScoreApp {
             jokerValue: jokerValue,
             players: selectedPlayers,
             rounds: [], // Dynamic rounds
-            startedAt: new Date().toISOString()
+            startedAt: new Date().toISOString(),
+            activePlayerIndex: 0,
+            timer: {
+                remaining: 120, // 2 minutes in seconds
+                running: false,
+                interval: null
+            }
         };
 
         this.saveData();
         this.showScreen('rummy-game-screen');
+        this.startTimer(); // Auto-start timer
         this.showToast('¡Partida de Rummy iniciada! 🃏', 'success');
     }
 
@@ -1508,7 +1518,32 @@ class DominoScoreApp {
                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                        placeholder="0">
             </div>
+                <input type="number"
+                       class="rummy-score-input"
+                       inputmode="numeric"
+                       pattern="[0-9]*"
+                       value=""
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                       placeholder="0">
+            </div>
         `).join('');
+
+        // Highlight Active Player
+        const inputRows = document.querySelectorAll('.rummy-input-row');
+        if (inputRows[this.currentGame.activePlayerIndex]) {
+            inputRows[this.currentGame.activePlayerIndex].classList.add('active-turn');
+            // Scroll to active player if needed
+            inputRows[this.currentGame.activePlayerIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Update Active Player Banner
+        const activePlayer = this.currentGame.players[this.currentGame.activePlayerIndex];
+        const bannerName = document.getElementById('active-player-name');
+        if (bannerName) bannerName.textContent = activePlayer.name;
+
+        // Update Timer Display
+        this.updateTimerDisplay();
+        this.updateTimerControls();
 
         // 2. Calculate Totals
         const totals = players.map(p => {
@@ -1600,14 +1635,134 @@ class DominoScoreApp {
             scores: scores
         });
 
+        // Reset inputs and jokers
+        rows.forEach(row => {
+            row.querySelector('.rummy-score-input').value = '';
+            row.querySelectorAll('.joker-toggle').forEach(t => t.classList.remove('active'));
+        });
+
         this.saveData();
         this.renderRummyGameScreen();
         this.showToast('Ronda guardada ✅', 'success');
         this.playSuccessSound();
-
-        // Reset inputs and jokers visually is handled by re-render
     }
 
+    // --- Rummy Timer Logic ---
+
+    startTimer() {
+        if (!this.currentGame || this.currentGame.type !== 'rummy') return;
+
+        if (this.currentGame.timer.running) return;
+
+        this.currentGame.timer.running = true;
+        this.updateTimerControls();
+
+        this.currentGame.timer.interval = setInterval(() => {
+            if (this.currentGame.timer.remaining > 0) {
+                this.currentGame.timer.remaining--;
+                this.updateTimerDisplay();
+
+                // Warnings
+                if (this.currentGame.timer.remaining === 30) {
+                    this.vibrate([100, 50, 100]);
+                    this.playWarningSound();
+                    this.showToast('⚠️ 30 Segundos', 'warning');
+                } else if (this.currentGame.timer.remaining === 10) {
+                    document.querySelector('#rummy-game-screen').classList.add('flash-warning');
+                }
+
+            } else {
+                this.stopTimer();
+                this.timeUp();
+            }
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.currentGame && this.currentGame.timer.interval) {
+            clearInterval(this.currentGame.timer.interval);
+            this.currentGame.timer.interval = null;
+            this.currentGame.timer.running = false;
+            this.updateTimerControls();
+            document.querySelector('#rummy-game-screen').classList.remove('flash-warning');
+        }
+    }
+
+    toggleTimer() {
+        if (this.currentGame.timer.running) {
+            this.stopTimer();
+        } else {
+            this.startTimer();
+        }
+    }
+
+    nextTurn() {
+        if (!this.currentGame) return;
+
+        // Stop current timer
+        this.stopTimer();
+
+        // Move to next player
+        this.currentGame.activePlayerIndex = (this.currentGame.activePlayerIndex + 1) % this.currentGame.players.length;
+
+        // Reset Timer to 2 minutes
+        this.currentGame.timer.remaining = 120;
+
+        this.saveData();
+
+        // Refresh UI to show new active player
+        this.renderRummyGameScreen();
+
+        // Start new timer
+        this.startTimer();
+        this.playSuccessSound(); // Ding for next turn
+    }
+
+    timeUp() {
+        this.vibrate([500, 200, 500]); // Long vibration
+        this.playWarningSound();
+        // Modal or prominent alert
+        if (confirm(`¡TIEMPO AGOTADO! ⏳\n\nPenalización para ${this.currentGame.players[this.currentGame.activePlayerIndex].name}:\n\n🎲 TOMA 3 FICHAS 🎲`)) {
+            // User acknowledged
+        }
+    }
+
+    updateTimerDisplay() {
+        const display = document.getElementById('rummy-timer-display');
+        const progress = document.getElementById('rummy-timer-progress');
+
+        if (!display || !this.currentGame) return;
+
+        const totalSeconds = this.currentGame.timer.remaining;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        // Progress Bar
+        const percentage = (totalSeconds / 120) * 100;
+        progress.style.width = `${percentage}%`;
+
+        // Colors
+        progress.className = 'timer-progress'; // Reset
+        if (totalSeconds <= 10) progress.classList.add('danger');
+        else if (totalSeconds <= 30) progress.classList.add('warning');
+    }
+
+    updateTimerControls() {
+        const btn = document.getElementById('btn-pause-timer');
+        if (!btn) return;
+
+        if (this.currentGame.timer.running) {
+            btn.classList.remove('paused');
+            btn.innerHTML = '⏸️'; // Pause icon
+        } else {
+            btn.classList.add('paused');
+            btn.innerHTML = ''; // Icon handled by CSS ::after or we just set text
+            // Let's stick to text to be safe if CSS ::after fails
+            btn.textContent = '▶️';
+        }
+    }
     finishRummyGame() {
         if (!confirm('¿Finalizar partida de Rummy?')) return;
 

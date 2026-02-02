@@ -295,7 +295,25 @@
         <div class="header">
             <button class="btn-back" onclick="app.confirmExitGame()">←</button>
             <h2 id="rummy-game-title">Rummy</h2>
-            <div class="round-badge" id="rummy-round-badge">Ronda 1</div>
+            <div class="header-actions">
+                <div class="round-badge" id="rummy-round-badge">Ronda 1</div>
+            </div>
+        </div>
+
+        <div class="timer-bar-container">
+            <div id="rummy-timer-progress" class="timer-progress"></div>
+            <div class="timer-content">
+                <span id="rummy-timer-display" class="timer-text">02:00</span>
+                <div class="timer-controls">
+                    <button id="btn-pause-timer" class="btn-timer-icon" onclick="app.toggleTimer()">⏸️</button>
+                    <button id="btn-next-turn" class="btn-timer-primary" onclick="app.nextTurn()">Pasar Turno
+                        ⏭️</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="active-player-banner" class="active-player-banner">
+            Turno de: <span id="active-player-name">-</span>
         </div>
 
         <div class="rummy-content">
