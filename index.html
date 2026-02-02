@@ -269,6 +269,14 @@
                         Puntos que suman si te quedas con él en la mano.
                     </p>
                 </div>
+                <div class="form-group">
+                    <label>Duración del Turno ⏱️</label>
+                    <div class="number-stepper">
+                        <button class="stepper-btn" onclick="app.adjustTurnTime(-1)">-</button>
+                        <input type="text" id="rummy-turn-time" value="2 min" readonly data-value="2">
+                        <button class="stepper-btn" onclick="app.adjustTurnTime(1)">+</button>
+                    </div>
+                </div>
             </div>
 
             <div class="setup-section">

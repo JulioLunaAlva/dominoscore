@@ -1452,6 +1452,15 @@ class DominoScoreApp {
         }
     }
 
+    adjustTurnTime(delta) {
+        const input = document.getElementById('rummy-turn-time');
+        let val = parseInt(input.dataset.value) + delta;
+        if (val < 1) val = 1;
+        if (val > 10) val = 10;
+        input.value = `${val} min`;
+        input.dataset.value = val;
+    }
+
     adjustJokerValue(delta) {
         const input = document.getElementById('rummy-joker-value');
         let val = parseInt(input.value) + delta;
@@ -1466,6 +1475,8 @@ class DominoScoreApp {
         });
 
         const jokerValue = parseInt(document.getElementById('rummy-joker-value').value);
+        const turnTimeMinutes = parseInt(document.getElementById('rummy-turn-time').dataset.value);
+        const turnTimeSeconds = turnTimeMinutes * 60;
 
         this.currentGame = {
             id: Date.now().toString(),
@@ -1476,7 +1487,8 @@ class DominoScoreApp {
             startedAt: new Date().toISOString(),
             activePlayerIndex: 0,
             timer: {
-                remaining: 120, // 2 minutes in seconds
+                totalTime: turnTimeSeconds,
+                remaining: turnTimeSeconds,
                 running: false,
                 interval: null
             }
@@ -1510,14 +1522,6 @@ class DominoScoreApp {
                         <span class="joker-toggle" onclick="app.toggleRummyJoker(this)" title="Segundo Comodín">🃏</span>
                     </div>
                 </div>
-                <input type="number"
-                       class="rummy-score-input"
-                       inputmode="numeric"
-                       pattern="[0-9]*"
-                       value=""
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                       placeholder="0">
-            </div>
                 <input type="number"
                        class="rummy-score-input"
                        inputmode="numeric"
@@ -1662,12 +1666,8 @@ class DominoScoreApp {
                 this.currentGame.timer.remaining--;
                 this.updateTimerDisplay();
 
-                // Warnings
-                if (this.currentGame.timer.remaining === 30) {
-                    this.vibrate([100, 50, 100]);
-                    this.playWarningSound();
-                    this.showToast('⚠️ 30 Segundos', 'warning');
-                } else if (this.currentGame.timer.remaining === 10) {
+                // Warnings (Silent updates only)
+                if (this.currentGame.timer.remaining <= 10) {
                     document.querySelector('#rummy-game-screen').classList.add('flash-warning');
                 }
 
@@ -1705,8 +1705,8 @@ class DominoScoreApp {
         // Move to next player
         this.currentGame.activePlayerIndex = (this.currentGame.activePlayerIndex + 1) % this.currentGame.players.length;
 
-        // Reset Timer to 2 minutes
-        this.currentGame.timer.remaining = 120;
+        // Reset Timer to dynamic total
+        this.currentGame.timer.remaining = this.currentGame.timer.totalTime || 120;
 
         this.saveData();
 
@@ -1740,7 +1740,8 @@ class DominoScoreApp {
         display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
         // Progress Bar
-        const percentage = (totalSeconds / 120) * 100;
+        const total = this.currentGame.timer.totalTime || 120;
+        const percentage = (totalSeconds / total) * 100;
         progress.style.width = `${percentage}%`;
 
         // Colors

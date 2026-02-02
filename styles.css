@@ -1735,9 +1735,9 @@ input:checked+.slider:before {
     animation: pulse 2s infinite;
 }
 
+/* CSS Icon removed to prevent duplication with JS */
 .btn-timer-icon.paused::after {
-    content: '▶️';
-    font-size: 1rem;
+    content: none;
 }
 
 /* Hide the original icon when paused if we use ::after (or just swap text in JS) */
