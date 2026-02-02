@@ -1740,6 +1740,75 @@ input:checked+.slider:before {
     content: none;
 }
 
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--background-card);
+    border: 1px solid var(--danger-color);
+    padding: 2rem;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 50px rgba(239, 68, 68, 0.3);
+}
+
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+
+.modal-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+.modal-message {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
+}
+
 /* Hide the original icon when paused if we use ::after (or just swap text in JS) */
 .btn-timer-icon.paused .original-icon {
     display: none;
