@@ -606,17 +606,20 @@ class DominoScoreApp {
             let rankClass = '';
             let rankIcon = '';
 
-            if (index === 0) { rankClass = 'rank-1'; rankIcon = '<span class="rank-icon">🥇</span>'; }
-            else if (index === 1) { rankClass = 'rank-2'; rankIcon = '<span class="rank-icon">🥈</span>'; }
-            else if (index === 2) { rankClass = 'rank-3'; rankIcon = '<span class="rank-icon">🥉</span>'; }
+            if (index === 0) { rankClass = 'rank-1'; rankIcon = '🥇'; }
+            else if (index === 1) { rankClass = 'rank-2'; rankIcon = '🥈'; }
+            else if (index === 2) { rankClass = 'rank-3'; rankIcon = '🥉'; }
 
             return `
             <div class="scoreboard-item ${rankClass}">
-                <div class="scoreboard-rank">${rankIcon || (index + 1)}</div>
-                ${standing.player.photo
-                    ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
-                    : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
+                <div class="scoreboard-rank">${index + 1}</div>
+                <div style="position: relative; margin-right: 1rem;">
+                    ${standing.player.photo
+                    ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar ${rankClass}">`
+                    : `<div class="player-avatar ${rankClass}">${standing.player.name.charAt(0).toUpperCase()}</div>`
                 }
+                    ${rankIcon ? `<div style="position: absolute; bottom: -5px; right: -5px; font-size: 1.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${rankIcon}</div>` : ''}
+                </div>
                 <div class="scoreboard-info">
                     <div class="player-name">${standing.player.name}</div>
                 </div>
@@ -756,9 +759,10 @@ class DominoScoreApp {
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
+                        const gameTitle = game.type === 'rummy' ? 'Rummy' : 'Dominó';
                         await navigator.share({
                             files: [file],
-                            title: '🏆 Ganador del Dominó',
+                            title: `🏆 Ganador del ${gameTitle}`,
                             text: `¡${winner.name} ganó con ${standings[0].totalScore} puntos! 🎲`
                         });
                     } catch (err) {
@@ -1932,22 +1936,26 @@ class DominoScoreApp {
 
         const winner = totals[0].player;
 
-        // Reuse share logic but adapt for Rummy?
-        // For now, save to history and show generic success
-
-        this.gameHistory.unshift({
+        const gameToSave = {
             ...this.currentGame,
             type: 'rummy',
             endedAt: new Date().toISOString(),
             winner: winner,
             finalStandings: totals
-        });
+        };
+
+        this.gameHistory.unshift(gameToSave);
 
         this.currentGame = null;
         this.saveData();
 
         this.fireConfetti();
-        alert(`¡${winner.name} ha ganado con solo ${totals[0].totalScore} puntos! 🏆`);
+
+        // Ask to share
+        if (confirm(`¡${winner.name} ha ganado con ${totals[0].totalScore} puntos! 🏆\n\n¿Quieres compartir el resultado?`)) {
+            this.shareGame(gameToSave);
+        }
+
         this.showScreen('menu-screen');
     }
     // --- Spectator Mode Logic ---

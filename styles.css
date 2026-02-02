@@ -1696,17 +1696,21 @@ input:checked+.slider:before {
 }
 
 /* Rummy Header Ranks */
-.player-avatar-mini.header-rank-1 {
+/* Rummy Header Ranks */
+.player-avatar-mini.header-rank-1,
+.player-avatar.rank-1 {
     border: 2px solid #fbbf24;
     box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
 }
 
-.player-avatar-mini.header-rank-2 {
+.player-avatar-mini.header-rank-2,
+.player-avatar.rank-2 {
     border: 2px solid #94a3b8;
     box-shadow: 0 0 8px rgba(148, 163, 184, 0.5);
 }
 
-.player-avatar-mini.header-rank-3 {
+.player-avatar-mini.header-rank-3,
+.player-avatar.rank-3 {
     border: 2px solid #b45309;
     box-shadow: 0 0 8px rgba(180, 83, 9, 0.5);
 }
