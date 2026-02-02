@@ -694,13 +694,21 @@ class DominoScoreApp {
         }
     }
 
-    async shareGameResult(winner, standings) {
+    async shareGame(game) {
+        const winner = game.winner;
+        const standings = game.finalStandings || game.finalScores || [];
+
+        if (!winner || standings.length === 0) {
+            console.error('Incomplete game data for sharing');
+            return;
+        }
+
         // Populate Hidden Share Card
         document.getElementById('share-winner-name').textContent = winner.name;
         document.getElementById('share-winner-name').className = 'share-winner-name'; // Reset class
         document.getElementById('share-winner-score').textContent = `${standings[0].totalScore} pts`;
 
-        const date = new Date();
+        const date = new Date(game.endedAt || new Date());
         document.getElementById('share-date').textContent = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
         // Winner Avatar
@@ -727,7 +735,7 @@ class DominoScoreApp {
         `).join('');
 
         // Wait a moment for DOM to update
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
 
         try {
             // Generate Image
@@ -741,20 +749,25 @@ class DominoScoreApp {
 
             const canvas = await window.html2canvas(element, {
                 scale: 2, // Retina quality
-                backgroundColor: '#0f172a',
+                backgroundColor: '#000000',
                 useCORS: true,
                 logging: false,
                 onclone: (clonedDoc) => {
                     // Ensure visibility in clone
                     const clonedElement = clonedDoc.getElementById('share-card');
-                    clonedElement.style.position = 'relative';
-                    clonedElement.style.left = '0';
-                    clonedElement.style.top = '0';
-                    clonedElement.style.zIndex = '9999';
+                    if (clonedElement) {
+                        clonedElement.style.position = 'relative';
+                        clonedElement.style.left = '0';
+                        clonedElement.style.top = '0';
+                        clonedElement.style.zIndex = '9999';
+                        clonedElement.style.opacity = '1';
+                        clonedElement.style.transform = 'none';
+                    }
                 }
             });
 
             canvas.toBlob(async (blob) => {
+                if (!blob) return;
                 const file = new File([blob], 'domino-ganador.png', { type: 'image/png' });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -771,8 +784,8 @@ class DominoScoreApp {
                 } else {
                     // Fallback to specific download
                     const link = document.createElement('a');
-                    link.download = `domino-ganador-${Date.now()}.png`;
-                    link.href = canvas.toDataURL();
+                    link.download = `ganador-${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
                     link.click();
                     this.showToast('Imagen guardada 📥', 'success');
                 }
@@ -824,8 +837,9 @@ class DominoScoreApp {
         // Show custom modal or alert then share
         // Using confirm for now to prompt share
         setTimeout(() => {
+            const gameToShare = this.gameHistory[0]; // The one we just unshifted
             if (confirm(`¡${winner.name} ha ganado! 🏆\n¿Quieres compartir los resultados?`)) {
-                this.shareGameResult(winner, standings);
+                this.shareGame(gameToShare);
             }
             this.showScreen('menu-screen');
         }, 1000);
@@ -847,7 +861,6 @@ class DominoScoreApp {
         }
 
         container.innerHTML = this.gameHistory.map(game => {
-            // Fix: Use endedAt if available, fallback to finishedAt for legacy data/safety
             const dateStrRaw = game.endedAt || game.finishedAt || new Date().toISOString();
             const date = new Date(dateStrRaw);
 
@@ -870,7 +883,10 @@ class DominoScoreApp {
                 <div class="history-card" onclick="app.showGameDetail('${game.id}')">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                         <div class="history-date">${dateStr}</div>
-                        <span class="game-type-badge ${typeClass}">${typeLabel}</span>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <span class="game-type-badge ${typeClass}">${typeLabel}</span>
+                            <button class="btn-delete-history" onclick="event.stopPropagation(); app.deleteGame('${game.id}')" aria-label="Eliminar partida">🗑️</button>
+                        </div>
                     </div>
                     <div class="history-players" style="margin-bottom: 0.5rem;">
                         ${game.players.map(p => `<span class="history-player-tag">${p.name}</span>`).join('')}
@@ -879,6 +895,15 @@ class DominoScoreApp {
                 </div>
             `;
         }).join('');
+    }
+
+    deleteGame(gameId) {
+        if (confirm('¿Estás seguro de que quieres eliminar esta partida del historial?')) {
+            this.gameHistory = this.gameHistory.filter(g => g.id !== gameId);
+            this.saveData();
+            this.renderHistory();
+            this.showToast('Partida eliminada 🗑️', 'info');
+        }
     }
 
     showGameDetail(gameId) {
