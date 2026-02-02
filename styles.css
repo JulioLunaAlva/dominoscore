@@ -1441,9 +1441,29 @@ input:checked+.slider:before {
 }
 
 /* Danger Zone */
-.danger-zone {
-    border-color: rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.05);
+.share-card {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1080px;
+    /* Standard Story Ratio 9:16 approx for high res */
+    height: 1920px;
+    background: #0f172a;
+    z-index: -1;
+    /* Behind everything */
+    opacity: 0;
+    pointer-events: none;
+    /* ... rest of styles ... */
+    display: flex;
+    /* Ensure flex layout is active for rendering */
+    flex-direction: column;
+    /* ... */
+    transform: translateX(-200%);
+    /* Move off-screen */
+}
+
+border-color: rgba(239, 68, 68, 0.3);
+background: rgba(239, 68, 68, 0.05);
 }
 
 .danger-zone h3 {

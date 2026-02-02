@@ -1463,6 +1463,20 @@ class DominoScoreApp {
         this.showScreen('player-stats-screen');
     }
 
+    confirmExit() {
+        if (confirm('¿Quieres salir al menú? El juego quedará en pausa.')) {
+            this.showScreen('menu-screen');
+        }
+    }
+
+    confirmExitGame() { // Renamed from Rummy specific or used as generic finish
+        if (confirm('¿Seguro que quieres abandonar la partida en curso?')) {
+            this.currentGame = null;
+            this.saveData();
+            this.showScreen('menu-screen');
+        }
+    }
+
     // --- Rummy Logic ---
 
     renderRummySetup() {
