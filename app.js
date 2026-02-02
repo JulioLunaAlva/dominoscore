@@ -1216,6 +1216,24 @@ class DominoScoreApp {
         this.playTone(300, 'triangle', 0.3);
     }
 
+    playAlarmSequence() {
+        if (!this.settings.audioEnabled) return;
+
+        let count = 0;
+        const interval = setInterval(() => {
+            // High pitched "Tic"
+            this.playTone(800, 'sine', 0.1, 0.2);
+            // Lower "Toc" slightly after? No, just 5 beeps as requested "5 tic tics"
+
+            count++;
+            if (count >= 5) {
+                clearInterval(interval);
+                // Final "Dong"
+                setTimeout(() => this.playTone(400, 'triangle', 0.4, 0.3), 200);
+            }
+        }, 200); // Fast sequence
+    }
+
     // Haptic Feedback
     vibrate(pattern = 10) {
         if ('vibrate' in navigator) {
@@ -1719,8 +1737,9 @@ class DominoScoreApp {
     }
 
     timeUp() {
-        this.vibrate([500, 200, 500]); // Long vibration
-        this.playWarningSound();
+        this.vibrate([200, 100, 200, 100, 500]); // Pulsing vibration
+        this.playAlarmSequence(); // Now plays 5 tics + 1 dong
+
         // Modal or prominent alert
         if (confirm(`¡TIEMPO AGOTADO! ⏳\n\nPenalización para ${this.currentGame.players[this.currentGame.activePlayerIndex].name}:\n\n🎲 TOMA 3 FICHAS 🎲`)) {
             // User acknowledged
