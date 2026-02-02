@@ -602,19 +602,28 @@ class DominoScoreApp {
             totalScore: this.calculateTotalScore(player.id)
         })).sort((a, b) => a.totalScore - b.totalScore);
 
-        container.innerHTML = standings.map((standing, index) => `
-            <div class="scoreboard-item ${index === 0 ? 'leader' : ''}">
-                <div class="scoreboard-rank">${index + 1}</div>
+        container.innerHTML = standings.map((standing, index) => {
+            let rankClass = '';
+            let rankIcon = '';
+
+            if (index === 0) { rankClass = 'rank-1'; rankIcon = '<span class="rank-icon">🥇</span>'; }
+            else if (index === 1) { rankClass = 'rank-2'; rankIcon = '<span class="rank-icon">🥈</span>'; }
+            else if (index === 2) { rankClass = 'rank-3'; rankIcon = '<span class="rank-icon">🥉</span>'; }
+
+            return `
+            <div class="scoreboard-item ${rankClass}">
+                <div class="scoreboard-rank">${rankIcon || (index + 1)}</div>
                 ${standing.player.photo
-                ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
-                : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
-            }
+                    ? `<img src="${standing.player.photo}" alt="${standing.player.name}" class="player-avatar">`
+                    : `<div class="player-avatar">${standing.player.name.charAt(0).toUpperCase()}</div>`
+                }
                 <div class="scoreboard-info">
                     <div class="player-name">${standing.player.name}</div>
                 </div>
                 <div class="scoreboard-score">${standing.totalScore}</div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     previousRound() {
@@ -747,22 +756,10 @@ class DominoScoreApp {
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
-                        await navigator.share({
-                            files: [file],
-                            title: '🏆 Ganador del Dominó',
-                            text: `¡${winner.name} ganó con ${standings[0].totalScore} puntos! 🎲`
-                        });
-                    } catch (err) {
-                        console.log('Share canceled or failed', err);
+                        link.href = canvas.toDataURL();
+                        link.click();
+                        // Optional: Show toast instead of alert
                     }
-                } else {
-                    // Fallback to specific download
-                    const link = document.createElement('a');
-                    link.download = `domino-ganador-${Date.now()}.png`;
-                    link.href = canvas.toDataURL();
-                    link.click();
-                    // Optional: Show toast instead of alert
-                }
             }, 'image/png');
 
         } catch (error) {
@@ -1600,24 +1597,44 @@ class DominoScoreApp {
             return rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0);
         });
 
-        // 3. Render History Table (Bottom)
-        let html = `
+        // Calculate Ranks for the header
+        const rankedPlayers = [...players]
+            .map(p => ({
+                id: p.id,
+                score: rounds.reduce((sum, r) => sum + (r.scores[p.id] || 0), 0)
+            }))
+            .sort((a, b) => a.score - b.score); // Ascending (Lower is better in Rummy)
+
+        return `
             <thead>
                 <tr>
                     <th class="rummy-round-cell">#</th>
-                    ${players.map(p => `
+                    ${players.map(p => {
+            const rankIndex = rankedPlayers.findIndex(rp => rp.id === p.id);
+            let headerRankClass = '';
+            let headerIcon = '';
+
+            if (rankIndex === 0) { headerRankClass = 'header-rank-1'; headerIcon = '🥇'; }
+            else if (rankIndex === 1) { headerRankClass = 'header-rank-2'; headerIcon = '🥈'; }
+            else if (rankIndex === 2) { headerRankClass = 'header-rank-3'; headerIcon = '🥉'; }
+
+            return `
                         <th>
                             <div class="rummy-player-header">
-                                <div class="player-avatar-mini">
-                                    ${p.photo
-                ? `<img src="${p.photo}">`
-                : `<div class="player-avatar-mini-initial">${p.name.charAt(0)}</div>`
-            }
+                                <div style="position:relative;">
+                                    <div class="player-avatar-mini ${headerRankClass}">
+                                        ${p.photo
+                    ? `<img src="${p.photo}">`
+                    : `<div class="player-avatar-mini-initial">${p.name.charAt(0)}</div>`
+                }
+                                    </div>
+                                    ${headerIcon ? `<div style="position:absolute; top:-5px; right:-5px; font-size:1rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${headerIcon}</div>` : ''}
                                 </div>
                                 <span>${p.name.split(' ')[0]}</span>
                             </div>
                         </th>
-                    `).join('')}
+                        `;
+        }).join('')}
                 </tr>
             </thead>
             <tbody>
