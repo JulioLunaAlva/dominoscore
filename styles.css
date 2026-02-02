@@ -262,8 +262,11 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    /* Changed from center */
     padding: 2rem;
+    padding-top: 4rem;
+    /* Specific top breathing room */
     text-align: center;
     min-height: 100vh;
 }
