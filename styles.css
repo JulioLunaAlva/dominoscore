@@ -1,23 +1,90 @@
 ﻿:root {
-    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
-    --primary-color: #6366f1;
-    --secondary-color: #06b6d4;
-    --background-dark: #0f172a;
-    --background-card: rgba(30, 41, 59, 0.8);
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --border-color: rgba(148, 163, 184, 0.2);
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    /* Premium OLED & Neon Palette */
+    --primary-gradient: linear-gradient(135deg, #00f3ff 0%, #0099ff 100%);
+    --primary-color: #00f3ff;
+    --secondary-color: #7000ff;
+    --accent-color: #ff0055;
+
+    --background-dark: #000000;
+    /* OLED True Black */
+    --background-card: rgba(20, 20, 23, 0.6);
+    /* Glass */
+
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+
+    --border-color: rgba(255, 255, 255, 0.1);
+
+    --success-color: #00ff9d;
+    --warning-color: #ffaa00;
+    --danger-color: #ff0055;
+
+    --shadow-lg: 0 0 30px rgba(0, 243, 255, 0.15);
+    --shadow-xl: 0 0 50px rgba(0, 153, 255, 0.25);
+
+    --neon-glow: 0 0 15px rgba(0, 243, 255, 0.6);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+.card,
+.score-input-card,
+.history-card,
+.setup-section,
+.modal-content {
+    background: var(--background-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    box-shadow: var(--shadow-lg);
+    border: none;
+    color: #000;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-shadow: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+    box-shadow: var(--neon-glow);
+}
+
+input[type="number"],
+.rummy-score-input,
+#player-name-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: var(--primary-color);
+    box-shadow: var(--neon-glow);
+    outline: none;
+}
+
+.active-player-banner {
+    background: linear-gradient(90deg, rgba(0, 243, 255, 0.1) 0%, rgba(112, 0, 255, 0.1) 100%);
+    border-bottom: 1px solid var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.rummy-input-row.active-turn {
+    background: rgba(0, 243, 255, 0.05);
+    border-left: 3px solid var(--primary-color);
+    box-shadow: inset 10px 0 20px -10px rgba(0, 243, 255, 0.3);
 }
 
 body {

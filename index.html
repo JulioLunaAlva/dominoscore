@@ -17,6 +17,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <!-- Spectator Mode Libraries -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -188,8 +191,9 @@
     <!-- Game Screen -->
     <div id="game-screen" class="screen">
         <div class="header">
-            <button class="btn-back" onclick="app.confirmExitGame()">←</button>
-            <h2>Juego en Curso</h2>
+            <button class="btn-back" onclick="app.confirmExit()">←</button>
+            <h2>Dominó</h2>
+            <button class="btn-icon" onclick="app.initSpectatorHost()">📡</button>
         </div>
 
         <div class="content">

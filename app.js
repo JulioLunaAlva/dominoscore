@@ -1233,19 +1233,33 @@ class DominoScoreApp {
     playAlarmSequence() {
         if (!this.settings.audioEnabled) return;
 
-        let count = 0;
-        const interval = setInterval(() => {
-            // High pitched "Tic"
-            this.playTone(800, 'sine', 0.1, 0.2);
-            // Lower "Toc" slightly after? No, just 5 beeps as requested "5 tic tics"
+        let ticCount = 0;
+        let loopCount = 0;
+        const totalLoops = 3;
 
-            count++;
-            if (count >= 5) {
-                clearInterval(interval);
-                // Final "Dong"
-                setTimeout(() => this.playTone(400, 'triangle', 0.4, 0.3), 200);
-            }
-        }, 200); // Fast sequence
+        const playLoop = () => {
+            const interval = setInterval(() => {
+                // High pitched "Tic"
+                this.playTone(800, 'sine', 0.1, 0.2);
+
+                ticCount++;
+                if (ticCount >= 5) {
+                    clearInterval(interval);
+                    ticCount = 0;
+
+                    // Final "Dong"
+                    setTimeout(() => {
+                        this.playTone(400, 'triangle', 0.4, 0.3);
+                        loopCount++;
+                        if (loopCount < totalLoops) {
+                            setTimeout(playLoop, 800);
+                        }
+                    }, 200);
+                }
+            }, 200);
+        };
+
+        playLoop();
     }
 
     // Haptic Feedback
@@ -1679,6 +1693,7 @@ class DominoScoreApp {
 
         this.saveData();
         this.renderRummyGameScreen();
+        this.broadcastGameUpdate(); // Share with spectators
         this.showToast('Ronda guardada ✅', 'success');
         this.playSuccessSound();
     }
@@ -1842,6 +1857,156 @@ class DominoScoreApp {
         alert(`¡${winner.name} ha ganado con solo ${totals[0].totalScore} puntos! 🏆`);
         this.showScreen('menu-screen');
     }
+    // --- Spectator Mode Logic ---
+
+    // --- Client Side ---
+    checkSpectatorMode() {
+        const params = new URLSearchParams(window.location.search);
+        const hostId = params.get('spectate');
+
+        if (hostId) {
+            console.log('Connecting as spectator to:', hostId);
+            this.showScreen('spectator-loading'); // Placeholder
+
+            // Allow clicking to unlock audio just in case they want sounds
+            document.body.addEventListener('click', () => this.unlockAudio(), { once: true });
+
+            const peer = new Peer();
+            peer.on('open', () => {
+                const conn = peer.connect(`domino-score-${hostId}`);
+
+                conn.on('open', () => {
+                    this.showToast('Conectado al Host 🟢', 'success');
+                });
+
+                conn.on('data', (data) => {
+                    if (data.type === 'UPDATE') {
+                        this.currentGame = data.game;
+                        this.renderSpectatorView();
+                    }
+                });
+
+                conn.on('error', (err) => console.error(err));
+            });
+        }
+    }
+
+    renderSpectatorView() {
+        // Reuse render logic but read-only
+        if (!this.currentGame) return;
+
+        // Hide interactive elements
+        document.querySelectorAll('.header .btn-back, .header .btn-icon').forEach(el => el.style.display = 'none');
+
+        if (this.currentGame.type === 'rummy') {
+            this.showScreen('rummy-game-screen');
+            this.renderRummyGameScreen();
+
+            // Disable inputs
+            document.querySelectorAll('input').forEach(i => i.disabled = true);
+            document.querySelectorAll('.joker-toggle').forEach(t => t.style.pointerEvents = 'none');
+            document.getElementById('btn-pause-timer').style.display = 'none';
+            document.getElementById('btn-next-turn').style.display = 'none';
+            document.getElementById('rummy-save-btn').style.display = 'none';
+        } else {
+            // Domino
+            this.showScreen('game-screen');
+            this.renderGameScreen();
+        }
+
+        // Add "Live" indicator
+        let badge = document.getElementById('live-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.id = 'live-badge';
+            badge.className = 'live-badge';
+            badge.innerHTML = '🔴 EN VIVO';
+            document.querySelector('.header').appendChild(badge);
+        }
+    }
+
+    async initSpectatorHost() {
+        if (this.peer) return; // Already hosting
+
+        this.showToast('Iniciando modo espectador... 📡');
+
+        try {
+            // Generate short ID
+            const shortId = Math.random().toString(36).substr(2, 4).toUpperCase();
+            this.peer = new Peer(`domino-score-${shortId}`);
+
+            this.peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                this.hostId = id;
+                this.spectators = [];
+                this.showSpectatorQR(shortId);
+            });
+
+            this.peer.on('connection', (conn) => {
+                console.log('Spectator connected');
+                this.spectators.push(conn);
+
+                // Send current state immediately
+                conn.on('open', () => {
+                    this.broadcastGameUpdate();
+                });
+            });
+
+            this.peer.on('error', (err) => {
+                console.error('PeerJS error', err);
+                this.showToast('Error de conexión ❌', 'warning');
+            });
+
+        } catch (e) {
+            console.error(e);
+            this.showToast('No se pudo iniciar PeerJS', 'warning');
+        }
+    }
+
+    broadcastGameUpdate() {
+        if (!this.peer || !this.currentGame || !this.spectators) return;
+
+        const data = {
+            type: 'UPDATE',
+            game: this.currentGame
+        };
+
+        this.spectators.forEach(conn => {
+            if (conn.open) {
+                conn.send(data);
+            }
+        });
+    }
+
+    showSpectatorQR(code) {
+        // Create modal for QR
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'qr-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>📡 Modo Espectador</h2>
+                <div id="qrcode" style="margin: 20px auto; width: 256px;"></div>
+                <p style="font-size: 1.5rem; font-weight: bold; margin: 10px 0; color: var(--primary-color);">${code}</p>
+                <p>Escanear para ver en vivo</p>
+                <div class="modal-actions">
+                    <button class="btn-primary" onclick="document.getElementById('qr-modal').remove()">Cerrar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Generate QR
+        const url = `${window.location.href.split('?')[0]}?spectate=${code}`;
+        new QRCode(modal.querySelector('#qrcode'), {
+            text: url,
+            width: 256,
+            height: 256,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
 }
 
 
@@ -1866,9 +2031,9 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Setup connection monitoring
         if (window.app) {
             window.app.setupConnectionMonitoring();
+            window.app.checkSpectatorMode();
         }
     } catch (e) {
         console.error('App init failed:', e);
