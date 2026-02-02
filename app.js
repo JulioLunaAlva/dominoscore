@@ -1216,6 +1216,20 @@ class DominoScoreApp {
         this.playTone(300, 'triangle', 0.3);
     }
 
+    unlockAudio() {
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume().then(() => {
+                // AudioContext resumed
+            });
+        }
+        if (!this.audioCtx) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.audioCtx = new AudioContext();
+            } catch (e) { console.error(e); }
+        }
+    }
+
     playAlarmSequence() {
         if (!this.settings.audioEnabled) return;
 
@@ -1740,10 +1754,19 @@ class DominoScoreApp {
         this.vibrate([200, 100, 200, 100, 500]); // Pulsing vibration
         this.playAlarmSequence(); // Now plays 5 tics + 1 dong
 
-        // Modal or prominent alert
-        if (confirm(`¡TIEMPO AGOTADO! ⏳\n\nPenalización para ${this.currentGame.players[this.currentGame.activePlayerIndex].name}:\n\n🎲 TOMA 3 FICHAS 🎲`)) {
-            // User acknowledged
-        }
+        // Show Custom Modal (Non-blocking so sound continues)
+        const modal = document.getElementById('time-up-modal');
+        const msg = document.getElementById('time-up-message');
+        const player = this.currentGame.players[this.currentGame.activePlayerIndex];
+
+        msg.innerHTML = `Penalización para <strong>${player ? player.name : 'Jugador'}</strong>:<br><br><span style="color: var(--danger-color); font-weight: 800; font-size: 1.4rem;">🎲 TOMA 3 FICHAS 🎲</span>`;
+
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    closeTimeUpModal() {
+        const modal = document.getElementById('time-up-modal');
+        if (modal) modal.classList.add('hidden');
     }
 
     updateTimerDisplay() {
@@ -1830,6 +1853,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // Global click listener for haptic feedback & sound
         document.addEventListener('click', (e) => {
+            // Unlock Audio Context on any interaction
+            if (window.app && window.app.unlockAudio) {
+                window.app.unlockAudio();
+            }
+
             if (e.target.closest('button') || e.target.closest('.player-select-card') || e.target.closest('.history-card')) {
                 if (window.app && window.app.vibrate) {
                     window.app.vibrate(10);

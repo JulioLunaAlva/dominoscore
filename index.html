@@ -505,10 +505,18 @@
                 <span class="share-date" id="share-date"></span> • Partido Épico 🎲
             </div>
         </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="app.js"></script>
+        <!-- Time Up Modal -->
+        <div id="time-up-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-icon">⏳</div>
+                <h2>¡TIEMPO AGOTADO!</h2>
+                <p id="time-up-message" class="modal-message"></p>
+                <div class="modal-actions">
+                    <button class="btn-primary" onclick="app.closeTimeUpModal()">Entendido</button>
+                </div>
+            </div>
+        </div>
+        <script type="module" src="app.js"></script>
 </body>
 
 </html>
