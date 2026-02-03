@@ -42,7 +42,8 @@ class DominoScoreApp {
         }
 
         // Resume Game Check
-        if (this.currentGame && !this.currentGame.finishedAt) {
+        // Resume Game Check
+        if (this.currentGame && (!this.currentGame.finishedAt && !this.currentGame.endedAt)) {
             const resumeBtn = document.getElementById('btn-resume-game');
             if (resumeBtn) {
                 resumeBtn.classList.remove('hidden');
@@ -90,15 +91,7 @@ class DominoScoreApp {
         }
     }
 
-    saveData() {
-        localStorage.setItem('dominoscore_players', JSON.stringify(this.players));
-        localStorage.setItem('dominoscore_history', JSON.stringify(this.gameHistory));
-        if (this.currentGame) {
-            localStorage.setItem('dominoscore_current_game', JSON.stringify(this.currentGame));
-        } else {
-            localStorage.removeItem('dominoscore_current_game');
-        }
-    }
+
 
     checkOnboarding() {
         const hasSeenOnboarding = localStorage.getItem('dominoscore_onboarding');
@@ -1489,8 +1482,8 @@ class DominoScoreApp {
         this.showScreen('player-stats-screen');
     }
 
-    confirmExit() {
-        if (confirm('¿Quieres salir al menú? El juego quedará en pausa.')) {
+    confirmPauseGame() {
+        if (confirm('¿Quieres salir al menú? El juego se guardará para que puedas continuar después.')) {
             this.showScreen('menu-screen');
         }
     }
@@ -1984,6 +1977,7 @@ class DominoScoreApp {
             finalStandings: totals
         };
 
+        if (!Array.isArray(this.gameHistory)) this.gameHistory = [];
         this.gameHistory.unshift(gameToSave);
 
         this.currentGame = null;
