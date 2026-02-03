@@ -734,8 +734,8 @@ class DominoScoreApp {
             </div>
         `).join('');
 
-        // Wait a moment for DOM to update
-        await new Promise(resolve => setTimeout(resolve, 150));
+        // Wait a moment for DOM to update and assets to load
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
             // Generate Image
@@ -748,20 +748,21 @@ class DominoScoreApp {
             }
 
             const canvas = await window.html2canvas(element, {
-                scale: 2, // Retina quality
+                scale: 2, // High resolution
                 backgroundColor: '#000000',
                 useCORS: true,
                 logging: false,
+                width: 600,
+                height: 1000,
                 onclone: (clonedDoc) => {
-                    // Ensure visibility in clone
                     const clonedElement = clonedDoc.getElementById('share-card');
                     if (clonedElement) {
                         clonedElement.style.position = 'relative';
                         clonedElement.style.left = '0';
                         clonedElement.style.top = '0';
-                        clonedElement.style.zIndex = '9999';
                         clonedElement.style.opacity = '1';
-                        clonedElement.style.transform = 'none';
+                        clonedElement.style.visibility = 'visible';
+                        clonedElement.style.zIndex = '9999';
                     }
                 }
             });
