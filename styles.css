@@ -1501,11 +1501,11 @@ input:checked+.slider:before {
 }
 
 .share-app-name {
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #6366f1, #06b6d4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+    background: transparent !important;
 }
 
 .share-winner-section {
@@ -1563,10 +1563,15 @@ input:checked+.slider:before {
 }
 
 .share-winner-name {
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 900;
+    color: #ffffff;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    background: transparent !important;
+    /* Force no background box */
+    padding: 0;
+    display: block;
 }
 
 .share-winner-score {
