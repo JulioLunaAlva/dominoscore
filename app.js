@@ -422,7 +422,7 @@ class DominoScoreApp {
     }
 
     updateGameSetup() {
-        const selectedCards = document.querySelectorAll('.player-select-card.selected');
+        const selectedCards = document.querySelectorAll('#player-selection .player-select-card.selected');
         const playerCount = selectedCards.length;
         const startBtn = document.getElementById('start-game-btn');
         const recommendation = document.getElementById('tile-recommendation');
@@ -465,7 +465,7 @@ class DominoScoreApp {
     }
 
     startGame() {
-        const selectedCards = document.querySelectorAll('.player-select-card.selected');
+        const selectedCards = document.querySelectorAll('#player-selection .player-select-card.selected');
         const selectedPlayers = Array.from(selectedCards).map(card => {
             const playerId = card.dataset.playerId;
             return this.players.find(p => p.id === playerId);
