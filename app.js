@@ -1697,8 +1697,6 @@ class DominoScoreApp {
         const inputRows = document.querySelectorAll('.rummy-input-row');
         if (inputRows[this.currentGame.activePlayerIndex]) {
             inputRows[this.currentGame.activePlayerIndex].classList.add('active-turn');
-            // Scroll to active player if needed
-            inputRows[this.currentGame.activePlayerIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         // Update Active Player Banner
