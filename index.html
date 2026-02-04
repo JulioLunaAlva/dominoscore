@@ -290,6 +290,17 @@
                     <!-- Populated by JS -->
                 </div>
 
+                <div class="settings-section" style="margin-top: 1.5rem;">
+                    <h3>Orden de Juego 📋</h3>
+                    <p class="section-subtitle"
+                        style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Toca para seleccionar arriba, luego usa las flechas para ordenar.
+                    </p>
+                    <div id="rummy-order-list" class="order-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
                 <!-- Tile Recommendation -->
                 <div id="rummy-tile-recommendation" class="tile-recommendation hidden" style="margin-top: 1rem;">
                     <div class="recommendation-icon">💡</div>
@@ -313,20 +324,27 @@
             </div>
         </div>
 
-        <div class="timer-bar-container">
-            <div id="rummy-timer-progress" class="timer-progress"></div>
-            <div class="timer-content">
-                <span id="rummy-timer-display" class="timer-text">02:00</span>
-                <div class="timer-controls">
-                    <button id="btn-pause-timer" class="btn-timer-icon" onclick="app.toggleTimer()">⏸️</button>
-                    <button id="btn-next-turn" class="btn-timer-primary" onclick="app.nextTurn()">Pasar Turno
-                        ⏭️</button>
-                </div>
+        <div class="rummy-turn-area">
+            <div class="circular-timer-container">
+                <svg class="timer-svg" viewBox="0 0 160 160">
+                    <circle class="timer-bg" cx="80" cy="80" r="70"></circle>
+                    <circle id="timer-path" class="timer-path" cx="80" cy="80" r="70"></circle>
+                </svg>
+                <button id="btn-next-turn" class="btn-next-turn" onclick="app.nextTurn()">
+                    <div class="next-turn-content">
+                        <span class="next-turn-label">PASAR TURNO</span>
+                        <span id="rummy-timer-display" class="timer-text">02:00</span>
+                    </div>
+                </button>
+                <button id="btn-pause-timer" class="btn-pause-timer" onclick="app.toggleTimer()">
+                    ⏸️
+                </button>
             </div>
-        </div>
 
-        <div id="active-player-banner" class="active-player-banner">
-            Turno de: <span id="active-player-name">-</span>
+            <div class="active-player-banner">
+                <span class="active-label">Turno de:</span>
+                <span id="active-player-name" class="active-name">-</span>
+            </div>
         </div>
 
         <div class="rummy-content">

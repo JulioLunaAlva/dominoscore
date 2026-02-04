@@ -1986,16 +1986,28 @@ input:checked+.slider:before {
     stroke-dasharray: 440;
     stroke-dashoffset: 0;
     transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+    filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.5));
 }
 
 .timer-path.warning {
     stroke: var(--warning-color);
-    filter: drop-shadow(0 0 8px var(--warning-color));
+    filter: drop-shadow(0 0 10px var(--warning-color));
 }
 
 .timer-path.danger {
     stroke: var(--danger-color);
-    filter: drop-shadow(0 0 12px var(--danger-color));
+    filter: drop-shadow(0 0 15px var(--danger-color));
+    animation: timer-pulse 1s infinite alternate;
+}
+
+@keyframes timer-pulse {
+    from {
+        filter: drop-shadow(0 0 10px var(--danger-color));
+    }
+
+    to {
+        filter: drop-shadow(0 0 25px var(--danger-color));
+    }
 }
 
 .btn-next-turn {
@@ -2003,9 +2015,9 @@ input:checked+.slider:before {
     height: 180px;
     border-radius: 50%;
     border: none;
-    background: radial-gradient(circle at 30% 30%, #4338ca, #1e1b4b);
+    background: radial-gradient(circle at 30% 30%, #4f46e5, #1e1b4b);
     box-shadow:
-        0 15px 35px rgba(0, 0, 0, 0.5),
+        0 15px 35px rgba(0, 0, 0, 0.6),
         inset 0 4px 10px rgba(255, 255, 255, 0.2),
         inset 0 -4px 10px rgba(0, 0, 0, 0.5);
     cursor: pointer;
@@ -2013,14 +2025,14 @@ input:checked+.slider:before {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 2;
 }
 
 .btn-next-turn:active {
-    transform: scale(0.92);
+    transform: scale(0.92) translateY(5px);
     box-shadow:
-        0 5px 15px rgba(0, 0, 0, 0.5),
+        0 5px 15px rgba(0, 0, 0, 0.6),
         inset 0 2px 5px rgba(255, 255, 255, 0.1);
 }
 
@@ -2076,7 +2088,24 @@ input:checked+.slider:before {
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
-    animation: fadeInUp 0.5s ease-out;
+    animation: fadeInUp 0.5s ease-out, banner-float 3s ease-in-out infinite;
+    padding: 1rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-width: 200px;
+}
+
+@keyframes banner-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
 }
 
 .active-label {

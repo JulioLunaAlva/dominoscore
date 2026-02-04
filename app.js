@@ -1529,16 +1529,25 @@ class DominoScoreApp {
 
     toggleRummyPlayer(playerId) {
         const card = document.querySelector(`[data-rummy-player-id="${playerId}"]`);
+        if (!card) return;
+
         card.classList.toggle('selected');
 
-        // Update Order List
+        // Ensure selectedRummyPlayers exists
         if (!this.selectedRummyPlayers) this.selectedRummyPlayers = [];
 
-        if (card.classList.contains('selected')) {
+        const isSelected = card.classList.contains('selected');
+
+        if (isSelected) {
             const player = this.players.find(p => p.id === playerId);
-            this.selectedRummyPlayers.push(player);
+            // Defensive: Only add if not already present
+            if (player && !this.selectedRummyPlayers.some(p => p.id === playerId)) {
+                this.selectedRummyPlayers.push(player);
+                this.vibrate(15);
+            }
         } else {
             this.selectedRummyPlayers = this.selectedRummyPlayers.filter(p => p.id !== playerId);
+            this.vibrate(10);
         }
 
         this.renderRummyOrderList();
@@ -1646,6 +1655,7 @@ class DominoScoreApp {
 
         this.saveData();
         this.showScreen('rummy-game-screen');
+        this.renderRummyGameScreen();
         this.startTimer(); // Auto-start timer
         this.showToast('¡Partida de Rummy iniciada! 🃏', 'success');
     }
@@ -1917,6 +1927,7 @@ class DominoScoreApp {
         } else {
             this.startTimer();
         }
+        this.updateTimerControls(); // Immediate visual feedback
     }
 
     nextTurn() {
