@@ -275,6 +275,27 @@
                     </p>
                 </div>
                 <div class="form-group">
+                    <label>Modo de Puntuación 🏆</label>
+                    <div class="mode-selector">
+                        <div class="mode-option active" onclick="app.setRummyMode('penalty', this)">
+                            <div class="mode-icon">📉</div>
+                            <div class="mode-info">
+                                <div class="mode-title">Penalización</div>
+                                <div class="mode-desc">Suma tus propios puntos. Gana el que tenga **menos**.</div>
+                            </div>
+                        </div>
+                        <div class="mode-option" onclick="app.setRummyMode('accumulative', this)">
+                            <div class="mode-icon">🚀</div>
+                            <div class="mode-info">
+                                <div class="mode-title">Acumulativo</div>
+                                <div class="mode-desc">El ganador se lleva los puntos de todos. Gana el que tenga
+                                    **más**.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>Duración del Turno ⏱️</label>
                     <div class="number-stepper">
                         <button class="stepper-btn" onclick="app.adjustTurnTime(-1)">-</button>

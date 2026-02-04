@@ -1618,6 +1618,14 @@ class DominoScoreApp {
         input.dataset.value = val;
     }
 
+    setRummyMode(mode, element) {
+        this.rummyScoringMode = mode;
+        const options = document.querySelectorAll('.mode-option');
+        options.forEach(opt => opt.classList.remove('active'));
+        element.classList.add('active');
+        this.vibrate(5);
+    }
+
     adjustJokerValue(delta) {
         const input = document.getElementById('rummy-joker-value');
         let val = parseInt(input.value) + delta;
@@ -1636,10 +1644,12 @@ class DominoScoreApp {
         const jokerValue = parseInt(document.getElementById('rummy-joker-value').value);
         const turnTimeMinutes = parseInt(document.getElementById('rummy-turn-time').dataset.value);
         const turnTimeSeconds = turnTimeMinutes * 60;
+        const scoringMode = this.rummyScoringMode || 'penalty';
 
         this.currentGame = {
             id: Date.now().toString(),
             type: 'rummy',
+            scoringMode: scoringMode,
             jokerValue: jokerValue,
             players: selectedPlayers,
             rounds: [], // Dynamic rounds
@@ -1718,8 +1728,14 @@ class DominoScoreApp {
             .map(p => ({
                 id: p.id,
                 score: rounds.reduce((sum, r) => sum + (r.scores[p.id] || 0), 0)
-            }))
-            .sort((a, b) => a.score - b.score);
+            }));
+
+        // Sort based on mode
+        if (this.currentGame.scoringMode === 'accumulative') {
+            rankedPlayers.sort((a, b) => b.score - a.score); // Descending
+        } else {
+            rankedPlayers.sort((a, b) => a.score - b.score); // Ascending
+        }
 
         let html = `
             <thead>
@@ -1864,10 +1880,46 @@ class DominoScoreApp {
 
         if (!hasData && !confirm('¿Guardar ronda con todos en 0?')) return;
 
-        this.currentGame.rounds.push({
-            id: Date.now(),
-            scores: scores
-        });
+        // Custom Scoring Logic: Accumulative
+        if (this.currentGame.scoringMode === 'accumulative') {
+            // Find person with 0 (or lowest score if multiple 0s, though usually one closes)
+            let roundWinnerId = null;
+            let lowestScore = Infinity;
+            let totalOtherPoints = 0;
+
+            for (const pid in scores) {
+                if (scores[pid] < lowestScore) {
+                    lowestScore = scores[pid];
+                    roundWinnerId = pid;
+                }
+                totalOtherPoints += scores[pid];
+            }
+
+            // In accumulative, the winner gets the SUM of everyone else's points
+            // Everyone else gets 0 (their penalty is already accounted for in the winner's gain)
+            // Wait, common rule: Winner gets sum of points others stay with. 
+            // Others stay with their hand points? No, usually they just don't sum anything and the winner sums all.
+            const accumulativeScores = {};
+            for (const pid in scores) {
+                if (pid === roundWinnerId) {
+                    accumulativeScores[pid] = totalOtherPoints;
+                } else {
+                    accumulativeScores[pid] = 0;
+                }
+            }
+
+            this.currentGame.rounds.push({
+                id: Date.now(),
+                scores: accumulativeScores,
+                originalScores: scores // Optional reference
+            });
+        } else {
+            // Standard Penalty Scoring
+            this.currentGame.rounds.push({
+                id: Date.now(),
+                scores: scores
+            });
+        }
 
         // Reset inputs and jokers
         rows.forEach(row => {
@@ -2024,7 +2076,13 @@ class DominoScoreApp {
         const totals = players.map(p => ({
             player: p,
             totalScore: rounds.reduce((sum, round) => sum + (round.scores[p.id] || 0), 0)
-        })).sort((a, b) => a.totalScore - b.totalScore); // Ascending for Rummy
+        }));
+
+        if (this.currentGame.scoringMode === 'accumulative') {
+            totals.sort((a, b) => b.totalScore - a.totalScore); // Highest wins
+        } else {
+            totals.sort((a, b) => a.totalScore - b.totalScore); // Lowest wins
+        }
 
         const winner = totals[0].player;
 
