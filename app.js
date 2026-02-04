@@ -1778,10 +1778,21 @@ class DominoScoreApp {
                 <tr>
                     <td class="rummy-round-cell">${i + 1}</td>
                     ${players.map(p => {
-                const score = round.scores[p.id];
-                // Highlight winner (0) or high scores
-                const style = score === 0 ? 'color: var(--success-color); font-weight: bold;' : '';
-                return `<td style="${style}">${score}</td>`;
+                const score = round.scores[p.id] || 0;
+
+                // Determine if this player won the round
+                let isWinner = false;
+                if (this.currentGame.scoringMode === 'accumulative') {
+                    // In accumulative, the winner is the one with the most points in that round
+                    const maxScore = Math.max(...Object.values(round.scores));
+                    isWinner = score === maxScore && score > 0;
+                } else {
+                    // In penalty, the winner is usually 0
+                    isWinner = score === 0;
+                }
+
+                const cellClass = isWinner ? 'round-winner-cell' : '';
+                return `<td class="${cellClass}">${score}</td>`;
             }).join('')}
                 </tr>
             `;
