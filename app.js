@@ -1499,6 +1499,7 @@ class DominoScoreApp {
     // --- Rummy Logic ---
 
     renderRummySetup() {
+        this.selectedRummyPlayers = []; // Reset order on enter
         const container = document.getElementById('rummy-player-selection');
 
         if (this.players.length === 0) {
@@ -1529,7 +1530,50 @@ class DominoScoreApp {
     toggleRummyPlayer(playerId) {
         const card = document.querySelector(`[data-rummy-player-id="${playerId}"]`);
         card.classList.toggle('selected');
+
+        // Update Order List
+        if (!this.selectedRummyPlayers) this.selectedRummyPlayers = [];
+
+        if (card.classList.contains('selected')) {
+            const player = this.players.find(p => p.id === playerId);
+            this.selectedRummyPlayers.push(player);
+        } else {
+            this.selectedRummyPlayers = this.selectedRummyPlayers.filter(p => p.id !== playerId);
+        }
+
+        this.renderRummyOrderList();
         this.updateRummySetup();
+    }
+
+    renderRummyOrderList() {
+        const container = document.getElementById('rummy-order-list');
+        if (!this.selectedRummyPlayers || this.selectedRummyPlayers.length === 0) {
+            container.innerHTML = '<p class="empty-state">Selecciona jugadores arriba para ordenar</p>';
+            return;
+        }
+
+        container.innerHTML = this.selectedRummyPlayers.map((player, index) => `
+            <div class="order-item" data-id="${player.id}">
+                <div class="order-rank">${index + 1}</div>
+                <div class="order-name">${player.name}</div>
+                <div class="order-actions">
+                    <button class="btn-order" onclick="app.moveRummyPlayer(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="btn-order" onclick="app.moveRummyPlayer(${index}, 1)" ${index === this.selectedRummyPlayers.length - 1 ? 'disabled' : ''}>↓</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    moveRummyPlayer(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= this.selectedRummyPlayers.length) return;
+
+        const temp = this.selectedRummyPlayers[index];
+        this.selectedRummyPlayers[index] = this.selectedRummyPlayers[newIndex];
+        this.selectedRummyPlayers[newIndex] = temp;
+
+        this.renderRummyOrderList();
+        this.vibrate(10);
     }
 
     updateRummySetup() {
@@ -1573,10 +1617,12 @@ class DominoScoreApp {
     }
 
     startRummyGame() {
-        const selectedCards = document.querySelectorAll('#rummy-player-selection .selected');
-        const selectedPlayers = Array.from(selectedCards).map(card => {
-            return this.players.find(p => p.id === card.dataset.rummyPlayerId);
-        });
+        if (!this.selectedRummyPlayers || this.selectedRummyPlayers.length < 2) {
+            this.showToast('Selecciona al menos 2 jugadores', 'warning');
+            return;
+        }
+
+        const selectedPlayers = [...this.selectedRummyPlayers];
 
         const jokerValue = parseInt(document.getElementById('rummy-joker-value').value);
         const turnTimeMinutes = parseInt(document.getElementById('rummy-turn-time').dataset.value);
@@ -1916,7 +1962,7 @@ class DominoScoreApp {
 
     updateTimerDisplay() {
         const display = document.getElementById('rummy-timer-display');
-        const progress = document.getElementById('rummy-timer-progress');
+        const timerPath = document.getElementById('timer-path');
 
         if (!display || !this.currentGame) return;
 
@@ -1926,15 +1972,19 @@ class DominoScoreApp {
 
         display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-        // Progress Bar
-        const total = this.currentGame.timer.totalTime || 120;
-        const percentage = (totalSeconds / total) * 100;
-        progress.style.width = `${percentage}%`;
+        // Circular Progress (SVG)
+        if (timerPath) {
+            const total = this.currentGame.timer.totalTime || 120;
+            const percentage = (totalSeconds / total);
+            // 440 is the circumference for r=70 (2 * pi * 70 approx 439.8)
+            const offset = 440 * (1 - percentage);
+            timerPath.style.strokeDashoffset = offset;
 
-        // Colors
-        progress.className = 'timer-progress'; // Reset
-        if (totalSeconds <= 10) progress.classList.add('danger');
-        else if (totalSeconds <= 30) progress.classList.add('warning');
+            // Colors
+            timerPath.classList.remove('warning', 'danger');
+            if (totalSeconds <= 10) timerPath.classList.add('danger');
+            else if (totalSeconds <= 30) timerPath.classList.add('warning');
+        }
     }
 
     updateTimerControls() {
