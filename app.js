@@ -1983,6 +1983,8 @@ class DominoScoreApp {
     }
 
     toggleTimer() {
+        if (!this.currentGame || !this.currentGame.timer) return;
+
         if (this.currentGame.timer.running) {
             this.stopTimer();
         } else {
@@ -2068,11 +2070,10 @@ class DominoScoreApp {
             btn.innerHTML = '⏸️'; // Pause icon
         } else {
             btn.classList.add('paused');
-            btn.innerHTML = ''; // Icon handled by CSS ::after or we just set text
-            // Let's stick to text to be safe if CSS ::after fails
-            btn.textContent = '▶️';
+            btn.innerHTML = '▶️'; // Play icon
         }
     }
+
     finishRummyGame() {
         if (!confirm('¿Finalizar partida de Rummy?')) return;
 
