@@ -563,6 +563,25 @@
         </div>
     </div>
 
+    <!-- Add Player Modal (Mid-Game) -->
+    <div id="add-player-modal" class="modal-overlay hidden">
+        <div class="modal-content quick-add-modal">
+            <h3>➕ Agregar Jugador a la Partida</h3>
+            <p class="modal-subtitle">Los jugadores nuevos empiezan con 0 puntos en rondas anteriores</p>
+            <div id="quick-player-list" class="quick-player-grid">
+                <!-- Injected via JS -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="app.closeAddPlayerModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Player Button (shown during game) -->
+    <button id="fab-add-player" class="fab-add-player hidden" onclick="app.showAddPlayerModal()" title="Agregar Jugador">
+        ➕
+    </button>
+
     <script type="module" src="app.js"></script>
 </body>
 

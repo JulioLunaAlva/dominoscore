@@ -150,6 +150,12 @@ class DominoScoreApp {
             } else {
                 if (resumeBtn) resumeBtn.classList.add('hidden');
             }
+            this.updateFabVisibility(); // Hide FAB on menu
+        }
+
+        // Update FAB visibility for game screens
+        if (screenId === 'rummy-game-screen' || screenId === 'domino-game-screen') {
+            this.updateFabVisibility();
         } else if (screenId === 'players-screen') {
             this.renderPlayersList();
         } else if (screenId === 'new-game-screen') {
@@ -333,6 +339,122 @@ class DominoScoreApp {
             this.players = this.players.filter(p => p.id !== playerId);
             this.saveData();
             this.renderPlayersList();
+        }
+    }
+
+    // --- Mid-Game Player Addition ---
+
+    showAddPlayerModal() {
+        if (!this.currentGame) return;
+
+        const modal = document.getElementById('add-player-modal');
+        if (!modal) return;
+
+        this.renderQuickPlayerList();
+        modal.classList.remove('hidden');
+    }
+
+    closeAddPlayerModal() {
+        const modal = document.getElementById('add-player-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    renderQuickPlayerList() {
+        const container = document.getElementById('quick-player-list');
+        if (!container || !this.currentGame) return;
+
+        // Get players not in current game
+        const currentPlayerIds = this.currentGame.players.map(p => p.id);
+        const availablePlayers = this.players.filter(p => !currentPlayerIds.includes(p.id));
+
+        if (availablePlayers.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <p>Todos los jugadores ya están en la partida</p>
+                    <button class="btn-primary" onclick="app.closeAddPlayerModal(); app.showPlayerModal();" style="margin-top: 1rem;">
+                        Crear Nuevo Jugador
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = availablePlayers.map(player => `
+            <div class="quick-player-card" onclick="app.addPlayerToActiveGame('${player.id}')">
+                <div class="player-avatar-mini">
+                    ${player.photo
+                ? `<img src="${player.photo}" alt="${player.name}">`
+                : `<div class="player-avatar-mini-initial">${player.name.charAt(0)}</div>`
+            }
+                </div>
+                <div class="player-name">${player.name}</div>
+            </div>
+        `).join('') + `
+            <div class="quick-player-card create-new" onclick="app.closeAddPlayerModal(); app.showPlayerModal();">
+                <div class="create-icon">➕</div>
+                <div class="player-name">Crear Nuevo</div>
+            </div>
+        `;
+    }
+
+    addPlayerToActiveGame(playerId) {
+        if (!this.currentGame) return;
+
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) return;
+
+        // Verify player is not already in game
+        if (this.currentGame.players.some(p => p.id === playerId)) {
+            this.showToast('Este jugador ya está en la partida', 'warning');
+            return;
+        }
+
+        // Add to players array
+        this.currentGame.players.push(player);
+
+        // Fill previous rounds with 0
+        if (this.currentGame.type === 'rummy') {
+            // For Rummy: add 0 to all previous rounds
+            this.currentGame.rounds.forEach(round => {
+                if (!round.scores[playerId]) {
+                    round.scores[playerId] = 0;
+                }
+            });
+        } else if (this.currentGame.type === 'domino') {
+            // For Domino: add 0 to all previous rounds
+            if (!this.currentGame.scores) this.currentGame.scores = [];
+            for (let i = 0; i < this.currentRound; i++) {
+                if (!this.currentGame.scores[i]) {
+                    this.currentGame.scores[i] = {};
+                }
+                this.currentGame.scores[i][playerId] = 0;
+            }
+        }
+
+        this.saveData();
+        this.closeAddPlayerModal();
+
+        // Re-render game screen
+        if (this.currentGame.type === 'rummy') {
+            this.renderRummyGameScreen();
+        } else {
+            this.renderScoreboard();
+        }
+
+        this.showToast(`${player.name} se unió al juego 🎉`, 'success');
+        this.playSuccessSound();
+        this.vibrate(30);
+    }
+
+    updateFabVisibility() {
+        const fab = document.getElementById('fab-add-player');
+        if (!fab) return;
+
+        // Show FAB only when there's an active game
+        if (this.currentGame && (this.currentGame.type === 'rummy' || this.currentGame.type === 'domino')) {
+            fab.classList.remove('hidden');
+        } else {
+            fab.classList.add('hidden');
         }
     }
 
@@ -1666,6 +1788,7 @@ class DominoScoreApp {
         this.saveData();
         this.showScreen('rummy-game-screen');
         this.renderRummyGameScreen();
+        this.updateFabVisibility();
         this.startTimer(); // Auto-start timer
         this.showToast('¡Partida de Rummy iniciada! 🃏', 'success');
     }
