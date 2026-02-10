@@ -387,7 +387,7 @@ class DominoScoreApp {
             container.innerHTML = `
                 <div class="empty-state" style="grid-column: 1 / -1;">
                     <p>Todos los jugadores ya están en la partida</p>
-                    <button class="btn-primary" onclick="app.closeAddPlayerModal(); app.showPlayerModal();" style="margin-top: 1rem;">
+                    <button class="btn-primary" onclick="app.closeAddPlayerModal(); app.showMidGamePlayerCreation();" style="margin-top: 1rem;">
                         Crear Nuevo Jugador
                     </button>
                 </div>
