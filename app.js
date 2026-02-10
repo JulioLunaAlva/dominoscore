@@ -197,6 +197,9 @@ class DominoScoreApp {
         // Reset button text
         const saveBtn = document.querySelector('#add-player-form .btn-primary');
         if (saveBtn) saveBtn.textContent = 'Guardar';
+
+        // Reset mode if cancelled
+        this.midGameCreationMode = false;
     }
 
     editPlayer(playerId) {
@@ -310,6 +313,15 @@ class DominoScoreApp {
 
         if (this.saveData()) {
             this.showToast(this.editingPlayerId ? 'Jugador actualizado' : 'Jugador creado correctamente', 'success');
+
+            // Handle Mid-Game Creation
+            if (this.midGameCreationMode) {
+                this.addPlayerToActiveGame(player.id);
+                this.midGameCreationMode = false;
+                this.cancelAddPlayer(); // Close form
+                return;
+            }
+
             this.renderPlayersList();
             this.cancelAddPlayer(); // This clears inputs
         }
@@ -394,11 +406,16 @@ class DominoScoreApp {
                 <div class="player-name">${player.name}</div>
             </div>
         `).join('') + `
-            <div class="quick-player-card create-new" onclick="app.closeAddPlayerModal(); app.showPlayerModal();">
+            <div class="quick-player-card create-new" onclick="app.closeAddPlayerModal(); app.showMidGamePlayerCreation();">
                 <div class="create-icon">➕</div>
                 <div class="player-name">Crear Nuevo</div>
             </div>
         `;
+    }
+
+    showMidGamePlayerCreation() {
+        this.midGameCreationMode = true;
+        this.showAddPlayerForm();
     }
 
     addPlayerToActiveGame(playerId) {
