@@ -316,6 +316,7 @@ class DominoScoreApp {
             this.showToast(this.editingPlayerId ? 'Jugador actualizado' : 'Jugador creado correctamente', 'success');
 
             // Handle Mid-Game Creation
+            console.log('In savePlayer. midGameCreationMode:', this.midGameCreationMode, 'Player ID:', player.id);
             if (this.midGameCreationMode) {
                 console.log('Mid-game creation mode detected. Adding player to active game:', player.id);
                 this.addPlayerToActiveGame(player.id);
