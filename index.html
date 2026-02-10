@@ -418,6 +418,18 @@
                 </div>
                 <div class="setting-item">
                     <div class="setting-label">
+                        <span>Sonido de Alarma</span>
+                        <small>Elige tu explosión preferida</small>
+                    </div>
+                    <select id="setting-alarm-sound" class="settings-select" onchange="app.setAlarmSound(this.value)">
+                        <option value="explosion">💥 Explosión Realista</option>
+                        <option value="retro">👾 Explosión Retro</option>
+                        <option value="classic">🚨 Alarma Clásica</option>
+                        <option value="gameover">🎮 Game Over</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">
                         <span>Voz del Narrador</span>
                         <small>Anuncios de rondas y ganadores</small>
                     </div>
@@ -578,7 +590,8 @@
     </div>
 
     <!-- Floating Add Player Button (shown during game) -->
-    <button id="fab-add-player" class="fab-add-player hidden" onclick="app.showAddPlayerModal()" title="Agregar Jugador">
+    <button id="fab-add-player" class="fab-add-player hidden" onclick="app.showAddPlayerModal()"
+        title="Agregar Jugador">
         ➕
     </button>
 

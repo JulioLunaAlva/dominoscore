@@ -12,7 +12,8 @@ class DominoScoreApp {
         this.settings = JSON.parse(localStorage.getItem('dominoscore_settings')) || {
             audioEnabled: true,
             voiceEnabled: true,
-            theme: 'dark'
+            theme: 'dark',
+            alarmSound: 'explosion'
         };
 
         // Round definitions will be generated based on game mode
@@ -34,6 +35,9 @@ class DominoScoreApp {
 
         const voiceToggle = document.getElementById('setting-voice');
         if (voiceToggle) voiceToggle.checked = this.settings.voiceEnabled;
+
+        const alarmSelect = document.getElementById('setting-alarm-sound');
+        if (alarmSelect) alarmSelect.value = this.settings.alarmSound || 'explosion';
 
         // Manual Event Listeners (Fix for module scope issues)
         const onboardingBtn = document.getElementById('btn-complete-onboarding');
@@ -1190,9 +1194,18 @@ class DominoScoreApp {
             this.saveSettings();
 
             // UX Feedback
-            if (this.settings[key]) {
+            if (this.settings[key] && key === 'audioEnabled') {
                 this.playSuccessSound();
             }
+        }
+    }
+
+    setAlarmSound(soundId) {
+        this.settings.alarmSound = soundId;
+        this.saveSettings();
+        // Preview sound
+        if (this.settings.audioEnabled) {
+            this.playSelectedAlarm();
         }
     }
 
@@ -1397,15 +1410,34 @@ class DominoScoreApp {
         }
     }
 
-    playExplosionSound() {
+    playSelectedAlarm() {
         if (!this.settings.audioEnabled) return;
-        this.unlockAudio(); // Ensure context is ready
+        const sound = this.settings.alarmSound || 'explosion';
 
+        switch (sound) {
+            case 'retro':
+                this.playRetroExplosion();
+                break;
+            case 'classic':
+                this.playClassicAlarm();
+                break;
+            case 'gameover':
+                this.playGameOverTone();
+                break;
+            case 'explosion':
+            default:
+                this.playRealisticExplosion();
+                break;
+        }
+    }
+
+    playRealisticExplosion() {
+        this.unlockAudio();
         const ctx = this.audioCtx;
         const t = ctx.currentTime;
 
-        // Create noise buffer (white noise)
-        const bufferSize = ctx.sampleRate * 2; // 2 seconds
+        // White Noise
+        const bufferSize = ctx.sampleRate * 2;
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
@@ -1418,7 +1450,7 @@ class DominoScoreApp {
         const noiseFilter = ctx.createBiquadFilter();
         noiseFilter.type = 'lowpass';
         noiseFilter.frequency.setValueAtTime(1000, t);
-        noiseFilter.frequency.exponentialRampToValueAtTime(50, t + 1.5); // Sweep down
+        noiseFilter.frequency.exponentialRampToValueAtTime(50, t + 1.5);
 
         const noiseGain = ctx.createGain();
         noiseGain.gain.setValueAtTime(1, t);
@@ -1429,7 +1461,7 @@ class DominoScoreApp {
         noiseGain.connect(ctx.destination);
         noise.start(t);
 
-        // Add a low oscillator 'boom'
+        // Low Oscillator
         const osc = ctx.createOscillator();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(100, t);
@@ -1444,6 +1476,99 @@ class DominoScoreApp {
         osc.start(t);
         osc.stop(t + 1.5);
     }
+
+    playRetroExplosion() {
+        this.unlockAudio();
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+
+        // Noise with square wave modulation
+        const bufferSize = ctx.sampleRate;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            // 8-bit style noise
+            data[i] = Math.round(Math.random()) * 2 - 1;
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+
+        noise.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(t);
+
+        // Downward sweep square wave
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.exponentialRampToValueAtTime(10, t + 0.5);
+
+        const oscGain = ctx.createGain();
+        oscGain.gain.setValueAtTime(0.5, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.6);
+    }
+
+    playClassicAlarm() {
+        this.unlockAudio();
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+
+        const playBeep = (time, freq) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0.1;
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(time);
+            osc.stop(time + 0.1);
+        };
+
+        // Sequence: Beep Beep Beep!
+        playBeep(t, 880);
+        playBeep(t + 0.2, 880);
+        playBeep(t + 0.4, 880);
+        playBeep(t + 0.6, 660); // Lower finish
+    }
+
+    playGameOverTone() {
+        this.unlockAudio();
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, t);
+        osc.frequency.linearRampToValueAtTime(300, t + 0.2);
+        osc.frequency.linearRampToValueAtTime(200, t + 0.4);
+        osc.frequency.linearRampToValueAtTime(100, t + 0.8);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.linearRampToValueAtTime(0.3, t + 0.6);
+        gain.gain.linearRampToValueAtTime(0, t + 1.0);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 1.0);
+    }
+
 
     // Haptic Feedback
     vibrate(pattern = 10) {
@@ -2157,7 +2282,7 @@ class DominoScoreApp {
 
     timeUp() {
         this.vibrate([200, 100, 200, 100, 500]); // Pulsing vibration
-        this.playExplosionSound(); // Plays explosion effect
+        this.playSelectedAlarm(); // Plays selected alarm effect
 
         // Show Custom Modal (Non-blocking so sound continues)
         const modal = document.getElementById('time-up-modal');
