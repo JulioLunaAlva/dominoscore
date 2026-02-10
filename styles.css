@@ -1450,14 +1450,15 @@ input:checked+.slider:before {
     top: 0;
     left: -2000px;
     width: 600px;
-    height: 1000px;
+    height: auto;
+    min-height: 1000px;
     background: #000000;
     display: flex;
     flex-direction: column;
     z-index: -9999;
     font-family: 'Inter', sans-serif;
     color: #ffffff;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .share-background {
@@ -2450,7 +2451,7 @@ input:checked+.slider:before {
     background: var(--primary-gradient);
     color: white;
     font-size: 1.8rem;
-    box-shadow: 
+    box-shadow:
         0 8px 20px rgba(99, 102, 241, 0.4),
         0 4px 10px rgba(0, 0, 0, 0.3);
     cursor: pointer;
@@ -2463,7 +2464,7 @@ input:checked+.slider:before {
 
 .fab-add-player:hover {
     transform: scale(1.1) rotate(90deg);
-    box-shadow: 
+    box-shadow:
         0 12px 30px rgba(99, 102, 241, 0.6),
         0 6px 15px rgba(0, 0, 0, 0.4);
 }

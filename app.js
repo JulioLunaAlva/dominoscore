@@ -839,9 +839,10 @@ class DominoScoreApp {
             winnerInitial.style.display = 'block';
         }
 
-        // Podium List (Top 3)
+        // Podium List (All remaining players)
         const podiumContainer = document.getElementById('share-podium-list');
-        podiumContainer.innerHTML = standings.slice(1, 4).map((s, i) => `
+        // Show all players except winner (staring from index 1)
+        podiumContainer.innerHTML = standings.slice(1).map((s, i) => `
             <div class="share-podium-item">
                 <span class="share-rank">#${i + 2}</span>
                 <span class="share-player-name">${s.player.name}</span>
@@ -868,7 +869,7 @@ class DominoScoreApp {
                 useCORS: true,
                 logging: false,
                 width: 600,
-                height: 1000,
+                // height: auto, // Let it calculate height based on content
                 onclone: (clonedDoc) => {
                     const clonedElement = clonedDoc.getElementById('share-card');
                     if (clonedElement) {
@@ -1396,36 +1397,52 @@ class DominoScoreApp {
         }
     }
 
-    playAlarmSequence() {
+    playExplosionSound() {
         if (!this.settings.audioEnabled) return;
+        this.unlockAudio(); // Ensure context is ready
 
-        let ticCount = 0;
-        let loopCount = 0;
-        const totalLoops = 3;
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime;
 
-        const playLoop = () => {
-            const interval = setInterval(() => {
-                // High pitched "Tic"
-                this.playTone(800, 'sine', 0.1, 0.2);
+        // Create noise buffer (white noise)
+        const bufferSize = ctx.sampleRate * 2; // 2 seconds
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
 
-                ticCount++;
-                if (ticCount >= 5) {
-                    clearInterval(interval);
-                    ticCount = 0;
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
 
-                    // Final "Dong"
-                    setTimeout(() => {
-                        this.playTone(400, 'triangle', 0.4, 0.3);
-                        loopCount++;
-                        if (loopCount < totalLoops) {
-                            setTimeout(playLoop, 800);
-                        }
-                    }, 200);
-                }
-            }, 200);
-        };
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(1000, t);
+        noiseFilter.frequency.exponentialRampToValueAtTime(50, t + 1.5); // Sweep down
 
-        playLoop();
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(1, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(t);
+
+        // Add a low oscillator 'boom'
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, t);
+        osc.frequency.exponentialRampToValueAtTime(10, t + 1);
+
+        const oscGain = ctx.createGain();
+        oscGain.gain.setValueAtTime(1, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, t + 1);
+
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 1.5);
     }
 
     // Haptic Feedback
@@ -2083,10 +2100,10 @@ class DominoScoreApp {
                 this.currentGame.timer.remaining--;
                 this.updateTimerDisplay();
 
-                // Warnings (Silent updates only)
-                if (this.currentGame.timer.remaining <= 10) {
-                    document.querySelector('#rummy-game-screen').classList.add('flash-warning');
-                }
+                // Warnings (Silent updates only - no visual flash requested)
+                // if (this.currentGame.timer.remaining <= 10) {
+                //    document.querySelector('#rummy-game-screen').classList.add('flash-warning');
+                // }
 
             } else {
                 this.stopTimer();
@@ -2140,14 +2157,14 @@ class DominoScoreApp {
 
     timeUp() {
         this.vibrate([200, 100, 200, 100, 500]); // Pulsing vibration
-        this.playAlarmSequence(); // Now plays 5 tics + 1 dong
+        this.playExplosionSound(); // Plays explosion effect
 
         // Show Custom Modal (Non-blocking so sound continues)
         const modal = document.getElementById('time-up-modal');
         const msg = document.getElementById('time-up-message');
         const player = this.currentGame.players[this.currentGame.activePlayerIndex];
 
-        msg.innerHTML = `Penalización para <strong>${player ? player.name : 'Jugador'}</strong>:<br><br><span style="color: var(--danger-color); font-weight: 800; font-size: 1.4rem;">🎲 TOMA 3 FICHAS 🎲</span>`;
+        msg.innerHTML = `Penalización para <strong>${player ? player.name : 'Jugador'}</strong>:<br><br><span style="color: var(--danger-color); font-weight: 800; font-size: 1.4rem;">💥 ¡BOOM! TOMA 3 FICHAS 💥</span>`;
 
         if (modal) modal.classList.remove('hidden');
     }
@@ -2158,29 +2175,21 @@ class DominoScoreApp {
     }
 
     updateTimerDisplay() {
+        // User requested NO visual timer display or progress.
+        // We keep the internal timer running but do not update the UI texts/SVGs aggressively.
+
         const display = document.getElementById('rummy-timer-display');
         const timerPath = document.getElementById('timer-path');
 
         if (!display || !this.currentGame) return;
 
-        const totalSeconds = this.currentGame.timer.remaining;
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
+        // Optionally, clear the display or show a static icon/text
+        display.textContent = '⏳';
 
-        display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-        // Circular Progress (SVG)
         if (timerPath) {
-            const total = this.currentGame.timer.totalTime || 120;
-            const percentage = (totalSeconds / total);
-            // 440 is the circumference for r=70 (2 * pi * 70 approx 439.8)
-            const offset = 440 * (1 - percentage);
-            timerPath.style.strokeDashoffset = offset;
-
-            // Colors
+            // Reset to full or empty - let's make it full static ring
+            timerPath.style.strokeDashoffset = '0';
             timerPath.classList.remove('warning', 'danger');
-            if (totalSeconds <= 10) timerPath.classList.add('danger');
-            else if (totalSeconds <= 30) timerPath.classList.add('warning');
         }
     }
 
