@@ -113,33 +113,36 @@
 
         <div class="content">
             <div id="players-list" class="players-list"></div>
+        </div>
+    </div>
 
-            <div id="add-player-form" class="add-player-form hidden">
-                <h3>Agregar Jugador</h3>
-                <div class="form-group">
-                    <label>Nombre</label>
-                    <input type="text" id="player-name" placeholder="Nombre del jugador">
-                </div>
+    <!-- New Player Modal (Global) -->
+    <div id="new-player-modal" class="modal-overlay hidden">
+        <div class="modal-content add-player-modal">
+            <h3>Agregar Jugador</h3>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="player-name" placeholder="Nombre del jugador">
+            </div>
 
-                <div class="form-group">
-                    <label>Foto (opcional)</label>
-                    <div class="photo-upload-container">
-                        <input type="file" id="player-photo" accept="image/*" onchange="app.previewPhoto(event)"
-                            class="hidden-input">
-                        <label for="player-photo" class="photo-upload-label">
-                            <div id="photo-preview" class="photo-preview empty"></div>
-                            <div class="photo-upload-overlay">
-                                <span class="camera-icon">📷</span>
-                            </div>
-                        </label>
-                        <p class="photo-help-text">Toca el círculo para subir foto</p>
-                    </div>
+            <div class="form-group">
+                <label>Foto (opcional)</label>
+                <div class="photo-upload-container">
+                    <input type="file" id="player-photo" accept="image/*" onchange="app.previewPhoto(event)"
+                        class="hidden-input">
+                    <label for="player-photo" class="photo-upload-label">
+                        <div id="photo-preview" class="photo-preview empty"></div>
+                        <div class="photo-upload-overlay">
+                            <span class="camera-icon">📷</span>
+                        </div>
+                    </label>
+                    <p class="photo-help-text">Toca el círculo para subir foto</p>
                 </div>
+            </div>
 
-                <div class="form-actions">
-                    <button class="btn-secondary" onclick="app.cancelAddPlayer()">Cancelar</button>
-                    <button class="btn-primary" onclick="app.savePlayer()">Guardar</button>
-                </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="app.cancelAddPlayer()">Cancelar</button>
+                <button class="btn-primary" onclick="app.savePlayer()">Guardar</button>
             </div>
         </div>
     </div>

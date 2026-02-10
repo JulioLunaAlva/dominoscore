@@ -178,7 +178,7 @@ class DominoScoreApp {
     // Player Management
     showAddPlayerForm() {
         this.midGameCreationMode = false; // Reset by default to prevent stuck state
-        document.getElementById('add-player-form').classList.remove('hidden');
+        document.getElementById('new-player-modal').classList.remove('hidden');
         document.getElementById('player-name').value = '';
         document.getElementById('player-photo').value = '';
         document.getElementById('photo-preview').innerHTML = '';
@@ -187,7 +187,7 @@ class DominoScoreApp {
     }
 
     cancelAddPlayer() {
-        document.getElementById('add-player-form').classList.add('hidden');
+        document.getElementById('new-player-modal').classList.add('hidden');
         document.getElementById('player-name').value = '';
         document.getElementById('player-photo').value = '';
         const preview = document.getElementById('photo-preview');
@@ -196,7 +196,7 @@ class DominoScoreApp {
         this.editingPlayerId = null;
 
         // Reset button text
-        const saveBtn = document.querySelector('#add-player-form .btn-primary');
+        const saveBtn = document.querySelector('#new-player-modal .btn-primary');
         if (saveBtn) saveBtn.textContent = 'Guardar';
 
         // Reset mode if cancelled
@@ -219,10 +219,10 @@ class DominoScoreApp {
             preview.classList.add('empty');
         }
 
-        const saveBtn = document.querySelector('#add-player-form .btn-primary');
+        const saveBtn = document.querySelector('#new-player-modal .btn-primary');
         if (saveBtn) saveBtn.textContent = 'Actualizar';
 
-        document.getElementById('add-player-form').classList.remove('hidden');
+        document.getElementById('new-player-modal').classList.remove('hidden');
     }
 
     previewPhoto(event) {

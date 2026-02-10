@@ -2679,3 +2679,28 @@ input:checked+.slider:before {
 .screen.flash-warning {
     animation: flash-red 1s ease infinite;
 }
+
+/* Add Player Modal (Global) */
+.add-player-modal {
+    border-color: var(--primary-color) !important;
+    text-align: left !important;
+    box-shadow: 0 0 50px rgba(99, 102, 241, 0.3) !important;
+}
+
+.add-player-modal h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.add-player-modal .form-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.add-player-modal .btn-primary,
+.add-player-modal .btn-secondary {
+    flex: 1;
+}
