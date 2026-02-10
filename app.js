@@ -177,6 +177,7 @@ class DominoScoreApp {
 
     // Player Management
     showAddPlayerForm() {
+        this.midGameCreationMode = false; // Reset by default to prevent stuck state
         document.getElementById('add-player-form').classList.remove('hidden');
         document.getElementById('player-name').value = '';
         document.getElementById('player-photo').value = '';
@@ -316,6 +317,7 @@ class DominoScoreApp {
 
             // Handle Mid-Game Creation
             if (this.midGameCreationMode) {
+                console.log('Mid-game creation mode detected. Adding player to active game:', player.id);
                 this.addPlayerToActiveGame(player.id);
                 this.midGameCreationMode = false;
                 this.cancelAddPlayer(); // Close form
@@ -414,12 +416,17 @@ class DominoScoreApp {
     }
 
     showMidGamePlayerCreation() {
-        this.midGameCreationMode = true;
+        console.log('showMidGamePlayerCreation called');
         this.showAddPlayerForm();
+        this.midGameCreationMode = true; // Set to true AFTER opening form
     }
 
     addPlayerToActiveGame(playerId) {
-        if (!this.currentGame) return;
+        console.log('addPlayerToActiveGame called for:', playerId);
+        if (!this.currentGame) {
+            console.error('No current game found');
+            return;
+        }
 
         const player = this.players.find(p => p.id === playerId);
         if (!player) return;
