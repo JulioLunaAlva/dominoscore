@@ -72,9 +72,61 @@ class DominoScoreApp {
     registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed'));
+                .then(reg => {
+                    console.log('Service Worker registered');
+
+                    // Update Detection Link:
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // A new version is ready!
+                                this.showUpdatePrompt();
+                            }
+                        });
+                    });
+                })
+                .catch(err => console.log('Service Worker registration failed', err));
+
+            // Handle forced reload
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
         }
+    }
+
+    showUpdatePrompt() {
+        // Use a persistent toast with an action button
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-success toast-update';
+        toast.style.cursor = 'pointer';
+        toast.style.pointerEvents = 'auto'; // Ensure it's clickable
+        toast.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <span>✨ Nueva versión disponible</span>
+                <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem; border-radius:4px;">Actualizar ahora</button>
+            </div>
+        `;
+
+        toast.onclick = () => {
+            if (navigator.serviceWorker.controller) {
+                // Find all active service workers and send skipwaiting
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let reg of registrations) {
+                        if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+                    }
+                });
+            } else {
+                window.location.reload();
+            }
+        };
+
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 100);
+        // Leave it visible for updates
     }
 
     loadData() {
@@ -1377,42 +1429,39 @@ class DominoScoreApp {
 
     // 🎵 Sound Effects (Web Audio API - No assets needed!)
     playTone(frequency, type, duration, vol = 0.1) {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) return;
+        if (!this.settings.audioEnabled) return;
 
-            if (!this.audioCtx) this.audioCtx = new AudioContext();
+        this.unlockAudio().then(() => {
+            try {
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
 
-            const osc = this.audioCtx.createOscillator();
-            const gain = this.audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
 
-            osc.type = type;
-            osc.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
 
-            gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
 
-            osc.connect(gain);
-            gain.connect(this.audioCtx.destination);
-
-            osc.start();
-            osc.stop(this.audioCtx.currentTime + duration);
-        } catch (e) {
-            console.error('Audio error', e);
-        }
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + duration);
+            } catch (e) {
+                console.error('Tone generation failed', e);
+            }
+        });
     }
 
     playClickSound() {
-        if (!this.settings.audioEnabled) return;
-        // Crisp "Pop" sound
-        this.playTone(600, 'sine', 0.1, 0.1);
+        // Soft click
+        this.playTone(600, 'sine', 0.1, 0.05);
     }
 
     playSuccessSound() {
-        if (!this.settings.audioEnabled) return;
         // "Ding ding!"
-        this.playTone(800, 'sine', 0.1);
-        setTimeout(() => this.playTone(1200, 'sine', 0.2), 100);
+        this.playTone(800, 'sine', 0.1, 0.1);
+        setTimeout(() => this.playTone(1200, 'sine', 0.2, 0.1), 100);
     }
 
     playWarningSound() {
@@ -1422,17 +1471,23 @@ class DominoScoreApp {
     }
 
     unlockAudio() {
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume().then(() => {
-                // AudioContext resumed
-            });
-        }
         if (!this.audioCtx) {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return Promise.resolve();
                 this.audioCtx = new AudioContext();
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('Could not create AudioContext', e);
+                return Promise.resolve();
+            }
         }
+
+        if (this.audioCtx.state === 'suspended') {
+            console.log('Resuming suspended AudioContext...');
+            return this.audioCtx.resume();
+        }
+
+        return Promise.resolve();
     }
 
     playSelectedAlarm() {

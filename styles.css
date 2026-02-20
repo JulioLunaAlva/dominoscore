@@ -2680,6 +2680,23 @@ input:checked+.slider:before {
     animation: flash-red 1s ease infinite;
 }
 
+/* Toast Update Notification */
+.toast-update {
+    background: var(--primary-gradient) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+    bottom: 20px;
+    z-index: 10001;
+    height: auto !important;
+    padding: 16px !important;
+}
+
+.toast-update .btn-primary {
+    background: white;
+    color: var(--primary-color);
+    font-weight: 800;
+}
+
 /* Add Player Modal (Global) */
 .add-player-modal {
     border-color: var(--primary-color) !important;
