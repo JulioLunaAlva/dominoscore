@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Anotador premium para Dominó Doble 12 - Gestiona jugadores y puntajes">
+    <title>DominoScore</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-512.png">
+    <link rel="apple-touch-icon" href="icons/icon-512.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Spectator Mode Libraries -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+
+<body>
+    <!-- Onboarding Screen -->
+    <div id="onboarding-screen" class="screen active">
+        <div class="onboarding-container">
+            <div class="logo-container">
+                <img src="icons/icon-512.png" alt="DominoScore Logo" class="app-logo">
+            </div>
+            <h1 class="onboarding-title">DominoScore</h1>
+            <p class="onboarding-subtitle">Anotador Premium de Dominó Doble 12</p>
+
+            <div class="onboarding-features">
+                <div class="feature-item">
+                    <div class="feature-icon">👥</div>
+                    <h3>Gestiona Jugadores</h3>
+                    <p>Agrega jugadores con fotos y guarda su historial</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <h3>Seguimiento de Puntajes</h3>
+                    <p>12 rondas desde la mula del 12 hasta la blanca</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Historial de Juegos</h3>
+                    <p>Revisa partidas anteriores y estadísticas</p>
+                </div>
+            </div>
+
+            <button id="btn-complete-onboarding" class="btn-primary"
+                onclick="app.completeOnboarding()">Comenzar</button>
+        </div>
+    </div>
+
+    <!-- Main Menu Screen -->
+    <div id="menu-screen" class="screen">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="icons/icon-512.png" alt="Logo" class="header-logo">
+                <h1>DominoScore</h1>
+            </div>
+            <button class="btn-icon" onclick="app.showScreen('settings-screen')" aria-label="Configuración">
+                ⚙️
+            </button>
+        </div>
+
+        <div class="menu-container">
+            <button id="btn-resume-game" class="menu-btn hidden" onclick="app.resumeGame()">
+                <span class="menu-icon">⏯️</span>
+                <span class="menu-text">Continuar Juego</span>
+            </button>
+
+            <div class="game-selector-container">
+                <div class="game-card" onclick="app.showScreen('new-game-screen')">
+                    <div class="game-icon">🀄</div>
+                    <div class="game-details">
+                        <h3>Dominó</h3>
+                        <p>Doble 12 / Doble 9</p>
+                    </div>
+                </div>
+                <div class="game-card" onclick="app.showScreen('rummy-setup-screen')">
+                    <div class="game-icon">🃏</div>
+                    <div class="game-details">
+                        <h3>Rummy</h3>
+                        <p>Anotador de Puntos</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="menu-btn" onclick="app.showScreen('players-screen')">
+                <span class="menu-icon">👥</span>
+                <span class="menu-text">Gestionar Jugadores</span>
+            </button>
+
+            <button class="menu-btn" onclick="app.showScreen('history-screen')">
+                <span class="menu-icon">📜</span>
+                <span class="menu-text">Historial de Juegos</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Players Management Screen -->
+    <div id="players-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Jugadores</h2>
+            <button class="btn-icon" onclick="app.showAddPlayerForm()">+</button>
+        </div>
+
+        <div class="content">
+            <div id="players-list" class="players-list"></div>
+        </div>
+    </div>
+
+    <!-- New Player Modal (Global) -->
+    <div id="new-player-modal" class="modal-overlay hidden">
+        <div class="modal-content add-player-modal">
+            <h3>Agregar Jugador</h3>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="player-name" placeholder="Nombre del jugador">
+            </div>
+
+            <div class="form-group">
+                <label>Foto (opcional)</label>
+                <div class="photo-upload-container">
+                    <input type="file" id="player-photo" accept="image/*" onchange="app.previewPhoto(event)"
+                        class="hidden-input">
+                    <label for="player-photo" class="photo-upload-label">
+                        <div id="photo-preview" class="photo-preview empty"></div>
+                        <div class="photo-upload-overlay">
+                            <span class="camera-icon">📷</span>
+                        </div>
+                    </label>
+                    <p class="photo-help-text">Toca el círculo para subir foto</p>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="app.cancelAddPlayer()">Cancelar</button>
+                <button class="btn-primary" onclick="app.savePlayer()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Game Setup Screen -->
+    <div id="new-game-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Nuevo Juego</h2>
+        </div>
+
+        <div class="content">
+            <div class="game-setup-container">
+                <h3>Configuración de Juego</h3>
+
+                <!-- Category: Clásico -->
+                <div class="mode-category">
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="classic" onchange="app.updateGameSetup()">
+                        <span class="mode-card mode-card-classic">
+                            <span class="domino-icon-emoji">🁣</span>
+                            <span class="mode-title">Clásico</span>
+                            <span class="mode-desc">Fichas restantes • Meta de puntos</span>
+                        </span>
+                    </label>
+                    <div id="classic-target-section" class="classic-target-section hidden">
+                        <label class="classic-target-label">🎯 Puntaje para perder</label>
+                        <div class="number-stepper">
+                            <button class="stepper-btn" onclick="app.adjustTargetScore(-50)">-</button>
+                            <input type="text" id="classic-target-score" value="100 pts" readonly data-value="100">
+                            <button class="stepper-btn" onclick="app.adjustTargetScore(50)">+</button>
+                        </div>
+                        <p style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.4rem;text-align:center;">El
+                            primero en llegar a este puntaje pierde. Gana quien tenga menos.</p>
+                    </div>
+                </div>
+
+                <!-- Category: Por Mulas -->
+                <div class="mode-category-label">— Por Mulas —</div>
+                <div class="mode-selection mode-selection-4">
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="6" onchange="app.updateGameSetup()">
+                        <span class="mode-card">
+                            <span class="domino-icon-emoji">🎲</span>
+                            <span class="mode-title">Doble 6</span>
+                            <span class="mode-desc">7 Rondas (6-0)</span>
+                        </span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="9" onchange="app.updateGameSetup()">
+                        <span class="mode-card">
+                            <img src="icons/domino-9.png" alt="Dominó 9" class="domino-icon-img">
+                            <span class="mode-title">Doble 9</span>
+                            <span class="mode-desc">10 Rondas (9-0)</span>
+                        </span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="12" checked onchange="app.updateGameSetup()">
+                        <span class="mode-card">
+                            <img src="icons/domino-12.png" alt="Dominó 12" class="domino-icon-img">
+                            <span class="mode-title">Doble 12</span>
+                            <span class="mode-desc">13 Rondas (12-0)</span>
+                        </span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="15" onchange="app.updateGameSetup()">
+                        <span class="mode-card">
+                            <span class="domino-icon-emoji">⬛</span>
+                            <span class="mode-title">Doble 15</span>
+                            <span class="mode-desc">16 Rondas (15-0)</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div id="tile-recommendation" class="tile-recommendation hidden">
+                    <span class="recommendation-icon">💡</span>
+                    <span class="recommendation-text"></span>
+                </div>
+
+                <div class="player-selection-grid" id="player-selection">
+                    <!-- Players injected here -->
+                </div>
+            </div>
+            <button id="start-game-btn" class="btn-primary" onclick="app.startGame()" disabled>
+                Iniciar Juego
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.confirmPauseGame()">←</button>
+            <h2>Dominó</h2>
+            <button class="btn-icon" onclick="app.initSpectatorHost()">📡</button>
+        </div>
+
+        <div class="content">
+            <!-- Round Selector -->
+            <div class="round-selector">
+                <button class="round-nav" onclick="app.previousRound()">←</button>
+                <div class="round-info">
+                    <span id="current-round-name" class="round-name"></span>
+                    <span id="current-round-number" class="round-number"></span>
+                </div>
+                <button class="round-nav" onclick="app.nextRound()">→</button>
+            </div>
+
+            <!-- Score Entry -->
+            <div id="score-entry" class="score-entry"></div>
+
+            <!-- Scoreboard -->
+            <div class="scoreboard-section">
+                <h3>Tabla de Posiciones</h3>
+                <div id="scoreboard" class="scoreboard"></div>
+            </div>
+
+            <!-- Game Actions -->
+            <div class="game-actions">
+                <button id="main-next-round-btn" class="btn-primary btn-lg" onclick="app.nextRound()">
+                    Siguiente Ronda ➡️
+                </button>
+                <button class="btn-link-danger" onclick="app.finishGame()">
+                    ⚠️ Finalizar Juego
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Screen -->
+    <div id="history-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Historial</h2>
+        </div>
+
+        <div class="content">
+            <div id="history-list" class="history-list"></div>
+        </div>
+    </div>
+
+    <!-- Game Detail Screen -->
+    <div id="game-detail-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('history-screen')">←</button>
+            <h2>Detalle del Juego</h2>
+        </div>
+
+        <div class="content">
+            <div id="game-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- Rummy Setup Screen -->
+    <div id="rummy-setup-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Nuevo Rummy</h2>
+        </div>
+
+        <div class="content">
+            <div class="setup-section">
+                <h3>1. Configuración de Juego</h3>
+                <div class="form-group">
+                    <label>Valor del Comodín (Joker) 🃏</label>
+                    <div class="number-stepper">
+                        <button class="stepper-btn" onclick="app.adjustJokerValue(-10)">-</button>
+                        <input type="number" id="rummy-joker-value" value="30" readonly>
+                        <button class="stepper-btn" onclick="app.adjustJokerValue(10)">+</button>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                        Puntos que suman si te quedas con él en la mano.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label>Modo de Puntuación 🏆</label>
+                    <div class="mode-selector">
+                        <div class="mode-option active" onclick="app.setRummyMode('penalty', this)">
+                            <div class="mode-icon">📉</div>
+                            <div class="mode-info">
+                                <div class="mode-title">Penalización</div>
+                                <div class="mode-desc">Suma tus propios puntos. Gana el que tenga **menos**.</div>
+                            </div>
+                        </div>
+                        <div class="mode-option" onclick="app.setRummyMode('accumulative', this)">
+                            <div class="mode-icon">🚀</div>
+                            <div class="mode-info">
+                                <div class="mode-title">Acumulativo</div>
+                                <div class="mode-desc">El ganador se lleva los puntos de todos. Gana el que tenga
+                                    **más**.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Duración del Turno ⏱️</label>
+                    <div class="number-stepper">
+                        <button class="stepper-btn" onclick="app.adjustTurnTime(-1)">-</button>
+                        <input type="text" id="rummy-turn-time" value="2 min" readonly data-value="2">
+                        <button class="stepper-btn" onclick="app.adjustTurnTime(1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <h3>2. Seleccionar Jugadores</h3>
+                <div id="rummy-player-selection" class="player-grid">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="settings-section" style="margin-top: 1.5rem;">
+                    <h3>Orden de Juego 📋</h3>
+                    <p class="section-subtitle"
+                        style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Toca para seleccionar arriba, luego usa las flechas para ordenar.
+                    </p>
+                    <div id="rummy-order-list" class="order-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Tile Recommendation -->
+                <div id="rummy-tile-recommendation" class="tile-recommendation hidden" style="margin-top: 1rem;">
+                    <div class="recommendation-icon">💡</div>
+                    <div class="recommendation-text">Selecciona jugadores para ver cuántas fichas tomar.</div>
+                </div>
+            </div>
+
+            <button id="start-rummy-btn" class="btn-primary" disabled onclick="app.startRummyGame()">
+                Iniciar Partida
+            </button>
+        </div>
+    </div>
+
+    <!-- Rummy Game Screen -->
+    <div id="rummy-game-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.confirmPauseGame()">←</button>
+            <h2 id="rummy-game-title">Rummy</h2>
+            <div class="header-actions">
+                <div class="round-badge" id="rummy-round-badge">Ronda 1</div>
+            </div>
+        </div>
+
+        <div class="rummy-turn-area">
+            <div class="circular-timer-container">
+                <svg class="timer-svg" viewBox="0 0 160 160">
+                    <circle class="timer-bg" cx="80" cy="80" r="70"></circle>
+                    <circle id="timer-path" class="timer-path" cx="80" cy="80" r="70"></circle>
+                </svg>
+                <button id="btn-next-turn" class="btn-next-turn" onclick="app.nextTurn()">
+                    <div class="next-turn-content">
+                        <span class="next-turn-label">PASAR TURNO</span>
+                        <span id="rummy-timer-display" class="timer-text">02:00</span>
+                    </div>
+                </button>
+                <button id="btn-pause-timer" class="btn-pause-timer" onclick="app.toggleTimer()">
+                    ⏸️
+                </button>
+            </div>
+
+            <div class="active-player-banner">
+                <span class="active-label">Turno de:</span>
+                <span id="active-player-name" class="active-name">-</span>
+            </div>
+        </div>
+
+        <div class="rummy-content">
+            <!-- Score Entry Section (Matches Domino style) -->
+            <div id="rummy-score-entry" class="score-entry">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Scoreboard Table -->
+            <div class="scoreboard-section">
+                <h3>Historial de Rondas</h3>
+                <div class="rummy-table-container">
+                    <table id="rummy-score-table">
+                        <!-- Generated by JS -->
+                    </table>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="game-actions">
+                <button id="save-rummy-round-btn" class="btn-primary btn-lg" onclick="app.saveRummyRound()">
+                    Guardar Ronda ✅
+                </button>
+                <button class="btn-link-danger" onclick="app.finishRummyGame()">
+                    🏆 Finalizar Partida
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('menu-screen')">←</button>
+            <h2>Configuración</h2>
+        </div>
+
+        <div class="settings-content">
+            <div class="settings-section">
+                <h3>Sonido 🔊</h3>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Efectos de Sonido</span>
+                        <small>Clicks, aplausos y alarmas</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-audio" checked onchange="app.toggleSetting('audioEnabled')">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Sonido de Alarma</span>
+                        <small>Elige tu explosión preferida</small>
+                    </div>
+                    <select id="setting-alarm-sound" class="settings-select" onchange="app.setAlarmSound(this.value)">
+                        <option value="explosion">💥 Explosión Realista</option>
+                        <option value="retro">👾 Explosión Retro</option>
+                        <option value="classic">🚨 Alarma Clásica</option>
+                        <option value="gameover">🎮 Game Over</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span>Voz del Narrador</span>
+                        <small>Anuncios de rondas y ganadores</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-voice" checked onchange="app.toggleSetting('voiceEnabled')">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Tema 🎨</h3>
+                <div class="theme-selector">
+                    <div class="theme-option" onclick="app.setTheme('dark')">
+                        <div class="theme-preview dark active" id="theme-dark"></div>
+                        <span>Oscuro</span>
+                    </div>
+                    <div class="theme-option" onclick="app.setTheme('light')">
+                        <div class="theme-preview light" id="theme-light"></div>
+                        <span>Claro</span>
+                    </div>
+                    <div class="theme-option" onclick="app.setTheme('green')">
+                        <div class="theme-preview green" id="theme-green"></div>
+                        <span>Clásico</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Datos y Respaldo 💾</h3>
+                <button class="btn-secondary" onclick="app.exportData()" style="width: 100%; margin-bottom: 0.75rem;">
+                    📥 Exportar Copia de Seguridad
+                </button>
+
+                <button class="btn-secondary" onclick="document.getElementById('import-file').click()"
+                    style="width: 100%;">
+                    📤 Importar Datos
+                </button>
+                <input type="file" id="import-file" accept=".json" style="display: none;"
+                    onchange="app.importData(event)">
+
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem; text-align: center;">
+                    Guarda tu archivo .json en un lugar seguro o envíalo a tu nuevo dispositivo.
+                </p>
+            </div>
+
+            <div class="settings-section danger-zone">
+                <h3>Zona de Peligro ⚠️</h3>
+                <button class="btn-secondary btn-danger" onclick="app.factoryReset()">
+                    Borrar Todos los Datos
+                </button>
+                <p class="danger-text">Esto eliminará jugadores, historial y juegos activos.</p>
+            </div>
+
+            <div class="app-version">
+                DominoScore v2.5 (Stats)
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Stats Screen -->
+    <div id="player-stats-screen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="app.showScreen('players-screen')">←</button>
+            <h2>Perfil</h2>
+        </div>
+
+        <div class="content" style="text-align: center;">
+            <div class="profile-header">
+                <div class="profile-avatar-large">
+                    <img id="stats-photo" src="" alt="Player" class="hidden">
+                    <div id="stats-initial" class="stats-initial">A</div>
+                </div>
+                <h2 id="stats-name">Nombre Jugador</h2>
+                <p id="stats-joined" style="color: var(--text-secondary); font-size: 0.9rem;">Miembro desde 2024</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stats-games">0</div>
+                    <div class="stat-label">Juegos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stats-wins">0</div>
+                    <div class="stat-label">Victorias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value highlight" id="stats-winrate">0%</div>
+                    <div class="stat-label">Efectividad</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stats-best">0</div>
+                    <div class="stat-label">Mejor Puntaje</div>
+                </div>
+            </div>
+
+            <h3 style="text-align: left; margin: 1.5rem 0 1rem;">Historial Reciente</h3>
+            <div id="stats-history-list" class="stats-history-list">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Share Card for Image Generation -->
+    <div id="share-card" class="share-card">
+        <div class="share-background"></div>
+        <div class="share-content">
+            <div class="share-header">
+                <img src="icons/icon-512.png" class="share-logo" alt="Logo">
+                <h2 class="share-app-name">DominoScore</h2>
+            </div>
+
+            <div class="share-winner-section">
+                <div class="share-trophy">🏆</div>
+                <div class="share-winner-avatar-container">
+                    <img id="share-winner-photo" src="" class="share-winner-photo">
+                    <div id="share-winner-initial" class="share-winner-initial"></div>
+                </div>
+                <div class="share-winner-label">GANADOR</div>
+                <h1 id="share-winner-name" class="share-winner-name">Jugador</h1>
+                <div id="share-winner-score" class="share-winner-score">0 pts</div>
+            </div>
+
+            <div class="share-podium" id="share-podium-list">
+                <!-- Podiums injected here -->
+            </div>
+
+            <div class="share-footer">
+                <span class="share-date" id="share-date"></span> • Partido Épico 🎲
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Up Modal -->
+    <div id="time-up-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-icon">⏳</div>
+            <h2>¡TIEMPO AGOTADO!</h2>
+            <p id="time-up-message" class="modal-message"></p>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="app.closeTimeUpModal()">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Player Modal (Mid-Game) -->
+    <div id="add-player-modal" class="modal-overlay hidden">
+        <div class="modal-content quick-add-modal">
+            <h3>➕ Agregar Jugador a la Partida</h3>
+            <p class="modal-subtitle">Los jugadores nuevos empiezan con 0 puntos en rondas anteriores</p>
+            <div id="quick-player-list" class="quick-player-grid">
+                <!-- Injected via JS -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="app.closeAddPlayerModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Player Button (shown during game) -->
+    <button id="fab-add-player" class="fab-add-player hidden" onclick="app.showAddPlayerModal()"
+        title="Agregar Jugador">
+        ➕
+    </button>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
