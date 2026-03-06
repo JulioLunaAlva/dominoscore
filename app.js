@@ -1,6 +1,6 @@
-// DominoScore App - Main Application Logic
+// Domino & Co. App - Main Application Logic
 
-class DominoScoreApp {
+class DominoAndCoApp {
     constructor() {
         this.players = JSON.parse(localStorage.getItem('dominoscore_players')) || [];
         this.gameHistory = JSON.parse(localStorage.getItem('dominoscore_history')) || [];
@@ -1479,7 +1479,7 @@ class DominoScoreApp {
 
         const a = document.createElement('a');
         a.href = url;
-        a.download = `DominoScore_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `Domino & Co._Backup_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2740,7 +2740,7 @@ class DominoScoreApp {
 window.addEventListener('DOMContentLoaded', () => {
     try {
         console.log('DOM Loaded, initializing App...');
-        window.app = new DominoScoreApp();
+        window.app = new DominoAndCoApp();
 
         // Global click listener for haptic feedback & sound
         document.addEventListener('click', (e) => {

@@ -8,10 +8,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Anotador premium para Dominó Doble 12 - Gestiona jugadores y puntajes">
-    <title>DominoScore</title>
+    <title>Domino & Co.</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="icons/icon-512.png">
-    <link rel="apple-touch-icon" href="icons/icon-512.png">
+    <link rel="icon" type="image/png" href="icons/logo-premium.png">
+    <link rel="apple-touch-icon" href="icons/logo-premium.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -28,10 +28,10 @@
     <div id="onboarding-screen" class="screen active">
         <div class="onboarding-container">
             <div class="logo-container">
-                <img src="icons/icon-512.png" alt="DominoScore Logo" class="app-logo">
+                <img src="icons/logo-premium.png" alt="Domino & Co. Logo" class="app-logo">
             </div>
-            <h1 class="onboarding-title">DominoScore</h1>
-            <p class="onboarding-subtitle">Anotador Premium de Dominó Doble 12</p>
+            <h1 class="onboarding-title">Domino & Co.</h1>
+            <p class="onboarding-subtitle">Anotador Premium de Juegos de Mesa</p>
 
             <div class="onboarding-features">
                 <div class="feature-item">
@@ -60,8 +60,9 @@
     <div id="menu-screen" class="screen">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <img src="icons/icon-512.png" alt="Logo" class="header-logo">
-                <h1>DominoScore</h1>
+                <img src="icons/logo-premium.png" alt="Logo" class="header-logo"
+                    style="width:32px; height:32px; border-radius:8px;">
+                <h1>Domino & Co.</h1>
             </div>
             <button class="btn-icon" onclick="app.showScreen('settings-screen')" aria-label="Configuración">
                 ⚙️
@@ -76,14 +77,16 @@
 
             <div class="game-selector-container">
                 <div class="game-card" onclick="app.showScreen('new-game-screen')">
-                    <div class="game-icon">🀄</div>
+                    <img src="icons/domino-6-premium.png" alt="Dominó" class="game-icon"
+                        style="width:48px;height:48px;border-radius:8px;">
                     <div class="game-details">
                         <h3>Dominó</h3>
-                        <p>Doble 12 / Doble 9</p>
+                        <p>Doble 6 a 15</p>
                     </div>
                 </div>
                 <div class="game-card" onclick="app.showScreen('rummy-setup-screen')">
-                    <div class="game-icon">🃏</div>
+                    <img src="icons/rummy-premium.png" alt="Rummy" class="game-icon"
+                        style="width:48px;height:48px;border-radius:8px;">
                     <div class="game-details">
                         <h3>Rummy</h3>
                         <p>Anotador de Puntos</p>
@@ -162,10 +165,13 @@
                 <div class="mode-category">
                     <label class="mode-option">
                         <input type="radio" name="game-mode" value="classic" onchange="app.updateGameSetup()">
-                        <span class="mode-card mode-card-classic">
-                            <span class="domino-icon-emoji">🁣</span>
-                            <span class="mode-title">Clásico</span>
-                            <span class="mode-desc">Fichas restantes • Meta de puntos</span>
+                        <span class="mode-card mode-card-classic premium-card">
+                            <img src="icons/domino-6-premium.png" alt="Clásico"
+                                class="domino-icon-img premium-icon-large">
+                            <span class="mode-text-wrapper" style="display:flex;flex-direction:column;">
+                                <span class="mode-title">Clásico</span>
+                                <span class="mode-desc">Meta de puntos</span>
+                            </span>
                         </span>
                     </label>
                     <div id="classic-target-section" class="classic-target-section hidden">
@@ -185,32 +191,32 @@
                 <div class="mode-selection mode-selection-4">
                     <label class="mode-option">
                         <input type="radio" name="game-mode" value="6" onchange="app.updateGameSetup()">
-                        <span class="mode-card">
-                            <span class="domino-icon-emoji">🎲</span>
+                        <span class="mode-card premium-mode-card">
+                            <img src="icons/domino-6-premium.png" alt="Doble 6" class="domino-icon-img premium-icon">
                             <span class="mode-title">Doble 6</span>
                             <span class="mode-desc">7 Rondas (6-0)</span>
                         </span>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="game-mode" value="9" onchange="app.updateGameSetup()">
-                        <span class="mode-card">
-                            <img src="icons/domino-9.png" alt="Dominó 9" class="domino-icon-img">
+                        <span class="mode-card premium-mode-card">
+                            <img src="icons/domino-9-premium.png" alt="Dominó 9" class="domino-icon-img premium-icon">
                             <span class="mode-title">Doble 9</span>
                             <span class="mode-desc">10 Rondas (9-0)</span>
                         </span>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="game-mode" value="12" checked onchange="app.updateGameSetup()">
-                        <span class="mode-card">
-                            <img src="icons/domino-12.png" alt="Dominó 12" class="domino-icon-img">
+                        <span class="mode-card premium-mode-card">
+                            <img src="icons/domino-12-premium.png" alt="Dominó 12" class="domino-icon-img premium-icon">
                             <span class="mode-title">Doble 12</span>
                             <span class="mode-desc">13 Rondas (12-0)</span>
                         </span>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="game-mode" value="15" onchange="app.updateGameSetup()">
-                        <span class="mode-card">
-                            <span class="domino-icon-emoji">⬛</span>
+                        <span class="mode-card premium-mode-card">
+                            <img src="icons/domino-15-premium.png" alt="Doble 15" class="domino-icon-img premium-icon">
                             <span class="mode-title">Doble 15</span>
                             <span class="mode-desc">16 Rondas (15-0)</span>
                         </span>
