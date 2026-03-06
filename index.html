@@ -158,21 +158,61 @@
             <div class="game-setup-container">
                 <h3>Configuración de Juego</h3>
 
-                <div class="mode-selection">
+                <!-- Category: Clásico -->
+                <div class="mode-category">
                     <label class="mode-option">
-                        <input type="radio" name="game-mode" value="12" checked onchange="app.updateGameSetup()">
+                        <input type="radio" name="game-mode" value="classic" onchange="app.updateGameSetup()">
+                        <span class="mode-card mode-card-classic">
+                            <span class="domino-icon-emoji">🁣</span>
+                            <span class="mode-title">Clásico</span>
+                            <span class="mode-desc">Fichas restantes • Meta de puntos</span>
+                        </span>
+                    </label>
+                    <div id="classic-target-section" class="classic-target-section hidden">
+                        <label class="classic-target-label">🎯 Puntaje para perder</label>
+                        <div class="number-stepper">
+                            <button class="stepper-btn" onclick="app.adjustTargetScore(-50)">-</button>
+                            <input type="text" id="classic-target-score" value="100 pts" readonly data-value="100">
+                            <button class="stepper-btn" onclick="app.adjustTargetScore(50)">+</button>
+                        </div>
+                        <p style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.4rem;text-align:center;">El
+                            primero en llegar a este puntaje pierde. Gana quien tenga menos.</p>
+                    </div>
+                </div>
+
+                <!-- Category: Por Mulas -->
+                <div class="mode-category-label">— Por Mulas —</div>
+                <div class="mode-selection mode-selection-4">
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="6" onchange="app.updateGameSetup()">
                         <span class="mode-card">
-                            <img src="icons/domino-12.png" alt="Dominó 12" class="domino-icon-img">
-                            <span class="mode-title">Dominó 12</span>
-                            <span class="mode-desc">13 Rondas (12-0)</span>
+                            <span class="domino-icon-emoji">🎲</span>
+                            <span class="mode-title">Doble 6</span>
+                            <span class="mode-desc">7 Rondas (6-0)</span>
                         </span>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="game-mode" value="9" onchange="app.updateGameSetup()">
                         <span class="mode-card">
                             <img src="icons/domino-9.png" alt="Dominó 9" class="domino-icon-img">
-                            <span class="mode-title">Dominó 9</span>
+                            <span class="mode-title">Doble 9</span>
                             <span class="mode-desc">10 Rondas (9-0)</span>
+                        </span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="12" checked onchange="app.updateGameSetup()">
+                        <span class="mode-card">
+                            <img src="icons/domino-12.png" alt="Dominó 12" class="domino-icon-img">
+                            <span class="mode-title">Doble 12</span>
+                            <span class="mode-desc">13 Rondas (12-0)</span>
+                        </span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="game-mode" value="15" onchange="app.updateGameSetup()">
+                        <span class="mode-card">
+                            <span class="domino-icon-emoji">⬛</span>
+                            <span class="mode-title">Doble 15</span>
+                            <span class="mode-desc">16 Rondas (15-0)</span>
                         </span>
                     </label>
                 </div>

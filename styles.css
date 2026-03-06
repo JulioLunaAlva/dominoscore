@@ -632,6 +632,11 @@ body::before {
     margin-bottom: 2rem;
 }
 
+/* 4-mode variant: 2x2 grid */
+.mode-selection-4 {
+    grid-template-columns: 1fr 1fr;
+}
+
 .mode-option {
     cursor: pointer;
     position: relative;
@@ -676,6 +681,20 @@ body::before {
     transform: scale(1.1) rotate(5deg);
 }
 
+/* Emoji icon for modes without PNG */
+.domino-icon-emoji {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    transition: transform 0.3s ease;
+    line-height: 1;
+}
+
+.mode-card:hover .domino-icon-emoji {
+    transform: scale(1.15) rotate(5deg);
+}
+
 .mode-title {
     font-weight: 700;
     color: var(--text-primary);
@@ -686,6 +705,83 @@ body::before {
 .mode-desc {
     font-size: 0.8rem;
     color: var(--text-secondary);
+}
+
+/* Classic Mode Category */
+.mode-category {
+    margin-bottom: 1rem;
+}
+
+.mode-category .mode-option {
+    display: block;
+    width: 100%;
+}
+
+.mode-card-classic {
+    flex-direction: row !important;
+    gap: 1rem;
+    padding: 1.2rem 1.5rem !important;
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.08) 0%, rgba(255, 100, 0, 0.08) 100%) !important;
+    border-color: rgba(255, 170, 0, 0.35) !important;
+    justify-content: flex-start !important;
+}
+
+.mode-category .mode-option input:checked+.mode-card-classic {
+    border-color: #ffaa00 !important;
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(255, 100, 0, 0.15) 100%) !important;
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.35) !important;
+}
+
+.mode-card-classic .domino-icon-emoji {
+    font-size: 2rem;
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.mode-card-classic .mode-title {
+    font-size: 1.2rem;
+}
+
+.classic-target-section {
+    margin-top: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 170, 0, 0.06);
+    border: 1px solid rgba(255, 170, 0, 0.2);
+    border-radius: 0.75rem;
+    animation: fadeIn 0.25s ease;
+}
+
+.classic-target-section.hidden {
+    display: none;
+}
+
+.classic-target-label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.6rem;
+}
+
+/* Category separator label */
+.mode-category-label {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Player Selection Grid */
@@ -2720,4 +2816,11 @@ input:checked+.slider:before {
 .add-player-modal .btn-primary,
 .add-player-modal .btn-secondary {
     flex: 1;
+}
+
+/* Classic mode badge in history */
+.badge-classic {
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(255, 100, 0, 0.15) 100%);
+    border: 1px solid rgba(255, 170, 0, 0.5);
+    color: #ffaa00;
 }

@@ -623,34 +623,66 @@ class DominoScoreApp {
         const startBtn = document.getElementById('start-game-btn');
         const recommendation = document.getElementById('tile-recommendation');
         const modeInput = document.querySelector('input[name="game-mode"]:checked');
-        const mode = modeInput ? parseInt(modeInput.value) : 12;
+        const rawMode = modeInput ? modeInput.value : '12';
+        const mode = rawMode === 'classic' ? 'classic' : parseInt(rawMode);
+
+        // Show/hide classic target score section
+        const classicSection = document.getElementById('classic-target-section');
+        if (classicSection) {
+            classicSection.classList.toggle('hidden', mode !== 'classic');
+        }
 
         if (playerCount >= 2 && playerCount <= 10) {
             startBtn.disabled = false;
-            recommendation.classList.remove('hidden');
 
+            if (mode === 'classic') {
+                recommendation.classList.add('hidden');
+                return;
+            }
+
+            recommendation.classList.remove('hidden');
             let tilesPerPlayer;
             const recommendationText = recommendation.querySelector('.recommendation-text');
 
-            if (mode === 9) { // Double-9 (55 tiles)
+            if (mode === 6) { // Double-6 (28 tiles)
+                if (playerCount === 2) tilesPerPlayer = 7;
+                else if (playerCount === 3) tilesPerPlayer = 6;
+                else if (playerCount === 4) tilesPerPlayer = 5;
+                else tilesPerPlayer = Math.floor(28 / playerCount);
+            } else if (mode === 9) { // Double-9 (55 tiles)
                 if (playerCount === 2) tilesPerPlayer = 14;
                 else if (playerCount === 3) tilesPerPlayer = 13;
                 else if (playerCount === 4) tilesPerPlayer = 13;
                 else if (playerCount === 5) tilesPerPlayer = 11;
                 else if (playerCount === 6) tilesPerPlayer = 9;
                 else tilesPerPlayer = Math.floor(55 / playerCount);
+            } else if (mode === 15) { // Double-15 (136 tiles)
+                if (playerCount <= 4) tilesPerPlayer = 15;
+                else if (playerCount <= 6) tilesPerPlayer = 13;
+                else if (playerCount <= 8) tilesPerPlayer = 12;
+                else tilesPerPlayer = Math.floor(136 / playerCount);
             } else { // Double-12 (91 tiles)
-                if (playerCount <= 6) tilesPerPlayer = 12; // Standard
+                if (playerCount <= 6) tilesPerPlayer = 12;
                 else if (playerCount <= 8) tilesPerPlayer = 10;
-                else tilesPerPlayer = Math.floor(91 / playerCount); // 9-10 players -> 9 tiles
+                else tilesPerPlayer = Math.floor(91 / playerCount);
             }
 
+            const modeLabel = `Doble-${mode}`;
             recommendationText.textContent =
-                `Con ${playerCount} jugador${playerCount > 1 ? 'es' : ''} y Doble-${mode}, cada uno debe tomar ${tilesPerPlayer} fichas.`;
+                `Con ${playerCount} jugador${playerCount > 1 ? 'es' : ''} y ${modeLabel}, cada uno debe tomar ${tilesPerPlayer} fichas.`;
         } else {
             startBtn.disabled = true;
             recommendation.classList.add('hidden');
         }
+    }
+
+    adjustTargetScore(delta) {
+        const input = document.getElementById('classic-target-score');
+        if (!input) return;
+        let current = parseInt(input.dataset.value) || 100;
+        current = Math.max(50, Math.min(500, current + delta));
+        input.dataset.value = current;
+        input.value = `${current} pts`;
     }
 
     generateRounds(maxDouble) {
@@ -674,30 +706,60 @@ class DominoScoreApp {
 
         // Get Game Mode
         const modeInput = document.querySelector('input[name="game-mode"]:checked');
-        const mode = modeInput ? parseInt(modeInput.value) : 12;
+        const rawMode = modeInput ? modeInput.value : '12';
 
-        this.generateRounds(mode);
+        if (rawMode === 'classic') {
+            // --- Classic Mode ---
+            const targetInput = document.getElementById('classic-target-score');
+            const targetScore = targetInput ? (parseInt(targetInput.dataset.value) || 100) : 100;
 
-        this.currentGame = {
-            id: Date.now().toString(),
-            mode: mode,
-            players: selectedPlayers,
-            rounds: this.roundNames.map((round, index) => ({
-                roundNumber: index + 1,
-                roundName: round.name,
-                scores: selectedPlayers.reduce((acc, player) => {
-                    acc[player.id] = 0;
-                    return acc;
-                }, {})
-            })),
-            startedAt: new Date().toISOString()
-        };
+            const firstRound = {
+                roundNumber: 1,
+                roundName: 'Mano 1',
+                scores: selectedPlayers.reduce((acc, p) => { acc[p.id] = 0; return acc; }, {})
+            };
 
-        this.currentRound = 0;
+            this.currentGame = {
+                id: Date.now().toString(),
+                mode: 'classic',
+                targetScore: targetScore,
+                players: selectedPlayers,
+                rounds: [firstRound],
+                startedAt: new Date().toISOString()
+            };
+            this.roundNames = [{ name: 'Mano 1', value: 1 }];
+            this.currentRound = 0;
 
-        if (this.saveData()) {
-            this.showScreen('game-screen');
-            this.showToast(`¡Juego Iniciado! Mula del ${mode} 🎲`, 'success');
+            if (this.saveData()) {
+                this.showScreen('game-screen');
+                this.showToast(`🎲 Dominó Clásico iniciado! Meta: ${targetScore} pts`, 'success');
+            }
+        } else {
+            // --- Mulas Mode ---
+            const mode = parseInt(rawMode);
+            this.generateRounds(mode);
+
+            this.currentGame = {
+                id: Date.now().toString(),
+                mode: mode,
+                players: selectedPlayers,
+                rounds: this.roundNames.map((round, index) => ({
+                    roundNumber: index + 1,
+                    roundName: round.name,
+                    scores: selectedPlayers.reduce((acc, player) => {
+                        acc[player.id] = 0;
+                        return acc;
+                    }, {})
+                })),
+                startedAt: new Date().toISOString()
+            };
+
+            this.currentRound = 0;
+
+            if (this.saveData()) {
+                this.showScreen('game-screen');
+                this.showToast(`¡Mula del ${mode} 🎲 Juego Iniciado!`, 'success');
+            }
         }
     }
 
@@ -708,8 +770,10 @@ class DominoScoreApp {
             return;
         }
 
-        // Restore rounds based on saved mode if needed
-        if (this.currentGame.mode && (!this.roundNames.length || this.roundNames[0].value !== this.currentGame.mode)) {
+        if (this.currentGame.mode === 'classic') {
+            // Restore roundNames from saved rounds
+            this.roundNames = this.currentGame.rounds.map((r, i) => ({ name: r.roundName, value: i + 1 }));
+        } else if (this.currentGame.mode && (!this.roundNames.length || this.roundNames[0].value !== this.currentGame.mode)) {
             this.generateRounds(this.currentGame.mode || 12);
         }
 
@@ -721,15 +785,26 @@ class DominoScoreApp {
 
     updateNavigationButtons() {
         const prevBtn = document.getElementById('prev-round-btn');
-        const nextBtn = document.getElementById('next-round-btn');
-        const finishBtn = document.getElementById('finish-game-btn');
 
-        if (!prevBtn || !nextBtn || !finishBtn) return;
-
-        const isLastRound = this.currentRound === this.roundNames.length - 1;
+        if (!prevBtn) return;
 
         prevBtn.disabled = this.currentRound === 0;
 
+        // Classic mode: "Siguiente Mano" button label and always visible
+        const mainNextBtn = document.getElementById('main-next-round-btn');
+        if (this.currentGame && this.currentGame.mode === 'classic') {
+            if (mainNextBtn) mainNextBtn.textContent = 'Siguiente Mano ➡️';
+            return; // always show next in classic
+        }
+
+        // Mulas mode: show/hide based on last round
+        const nextBtn = document.getElementById('next-round-btn');
+        const finishBtn = document.getElementById('finish-game-btn');
+        if (!nextBtn || !finishBtn) return;
+
+        if (mainNextBtn) mainNextBtn.textContent = 'Siguiente Ronda ➡️';
+
+        const isLastRound = this.currentRound === this.roundNames.length - 1;
         if (isLastRound) {
             nextBtn.classList.add('hidden');
             finishBtn.classList.remove('hidden');
@@ -742,8 +817,14 @@ class DominoScoreApp {
     updateRoundDisplay() {
         const roundInfo = this.roundNames[this.currentRound];
         document.getElementById('current-round-name').textContent = roundInfo.name;
-        document.getElementById('current-round-number').textContent =
-            `Ronda ${this.currentRound + 1} de ${this.roundNames.length}`;
+        if (this.currentGame && this.currentGame.mode === 'classic') {
+            const target = this.currentGame.targetScore;
+            document.getElementById('current-round-number').textContent =
+                `Mano ${this.currentRound + 1}  •  Meta: ${target} pts`;
+        } else {
+            document.getElementById('current-round-number').textContent =
+                `Ronda ${this.currentRound + 1} de ${this.roundNames.length}`;
+        }
     }
 
     renderScoreEntry() {
@@ -833,12 +914,46 @@ class DominoScoreApp {
     }
 
     nextRound() {
-        if (this.currentRound < this.roundNames.length - 1) {
-            // Analyze commentary before moving
+        if (this.currentGame && this.currentGame.mode === 'classic') {
+            // Classic mode: always add a new round unless viewing a past one
             this.analyzeRoundCommentary();
 
+            // If we're not at the latest round, just navigate forward
+            if (this.currentRound < this.currentGame.rounds.length - 1) {
+                this.currentRound++;
+                this.renderGameScreen();
+                return;
+            }
+
+            // Check if any player has reached/exceeded the target
+            const target = this.currentGame.targetScore;
+            const standings = this.currentGame.players.map(p => ({
+                player: p,
+                totalScore: this.calculateTotalScore(p.id)
+            }));
+            const busted = standings.filter(s => s.totalScore >= target);
+            if (busted.length > 0) {
+                const names = busted.map(s => s.player.name).join(', ');
+                this.showToast(`⚠️ ${names} llegó a ${target} pts. ¡Finaliza la partida!`, 'warning');
+            }
+
+            // Add new round
+            const newRoundNum = this.currentGame.rounds.length + 1;
+            const newRound = {
+                roundNumber: newRoundNum,
+                roundName: `Mano ${newRoundNum}`,
+                scores: this.currentGame.players.reduce((acc, p) => { acc[p.id] = 0; return acc; }, {})
+            };
+            this.currentGame.rounds.push(newRound);
+            this.roundNames.push({ name: `Mano ${newRoundNum}`, value: newRoundNum });
+            this.currentRound = this.currentGame.rounds.length - 1;
+            this.saveData();
+            this.renderGameScreen();
+        } else if (this.currentRound < this.roundNames.length - 1) {
+            // Mulas mode: fixed rounds
+            this.analyzeRoundCommentary();
             this.currentRound++;
-            this.saveData(); // Save new round index
+            this.saveData();
             this.renderGameScreen();
         }
     }
@@ -1071,8 +1186,18 @@ class DominoScoreApp {
             });
 
             const isRummy = game.type === 'rummy';
-            const typeLabel = isRummy ? '🃏 Rummy' : '🎲 Dominó';
-            const typeClass = isRummy ? 'badge-rummy' : 'badge-domino';
+            const isClassic = !isRummy && game.mode === 'classic';
+            let typeLabel, typeClass;
+            if (isRummy) {
+                typeLabel = '🃏 Rummy';
+                typeClass = 'badge-rummy';
+            } else if (isClassic) {
+                typeLabel = '🁣 Clásico';
+                typeClass = 'badge-classic';
+            } else {
+                typeLabel = `🎲 D${game.mode}`;
+                typeClass = 'badge-domino';
+            }
 
             const standings = game.finalScores || game.finalStandings || [];
             const winnerScore = standings.length > 0 ? standings[0].totalScore : 0;
